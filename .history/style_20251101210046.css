@@ -404,26 +404,18 @@ body {
         display: flex;   
         flex-direction: column;
         align-items: center; 
-        overflow-x: hidden !important;
+        
     }
 
     .card-list-grid {
         width: 100%;
         max-width: 500px;  
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }
 
     .cards-content {
         padding: 0 10px;
         display: flex;
         justify-content: center;
-        left: 0 !important;
-        right: 0 !important;
-        min-width: auto !important;
-        width: 100% !important;
     }
 
     .header h1 {
