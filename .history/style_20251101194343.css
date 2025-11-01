@@ -36,7 +36,7 @@ body {
 }
 
 .fake-scroll-wrapper {
-    max-width: 3300px;
+    max-width: 3500px;
     margin: 20px auto 10px 20px;
     height: 12px;
     overflow-x: auto;
@@ -51,7 +51,7 @@ body {
 }
 
 .fake-scroll {
-    min-width: 3300px;
+    min-width: 3500px;
     height: 1px;
 }
 
