@@ -152,19 +152,15 @@ class ResponsiveVirtualView {
     }
 
     setupScrollListener() {
-        let ticking = false;
+        let scrollTimeout;
         this.cardsContainer.addEventListener('scroll', () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    this.render();
-                    this.checkLoadMore();
-                    ticking = false;
-                });
-                ticking = true;
-            }
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                this.render(); 
+                this.checkLoadMore(); 
+            }, 16);
         });
     }
-
 
     setupResizeListener() {
         let resizeTimeout;

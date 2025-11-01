@@ -151,7 +151,7 @@ class ResponsiveVirtualView {
         }
     }
 
-    setupScrollListener() {
+        setupScrollListener() {
         let ticking = false;
         this.cardsContainer.addEventListener('scroll', () => {
             if (!ticking) {

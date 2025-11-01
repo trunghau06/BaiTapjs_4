@@ -152,18 +152,18 @@ class ResponsiveVirtualView {
     }
 
     setupScrollListener() {
-        let ticking = false;
-        this.cardsContainer.addEventListener('scroll', () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    this.render();
-                    this.checkLoadMore();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        });
-    }
+    let ticking = false;
+    this.cardsContainer.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                this.render();
+                this.checkLoadMore();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+}
 
 
     setupResizeListener() {
