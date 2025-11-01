@@ -410,9 +410,7 @@ body {
     }
 
     .cards-content {
-        padding: 0 10px;
-        display: flex;
-        justify-content: center;
+        git push -u origin main
     }
 
     .header h1 {
