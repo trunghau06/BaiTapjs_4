@@ -1,0 +1,303 @@
+class VirtualCards {
+    constructor() {
+        this.data        = []; // Khai bao mang luu tru toan bo du lieu
+        this.cardsPerRow = 0; // So luong card tren mot hang (tinh toan luc runtime)
+        this.visibleRows = 0; // So luong hang co the nhin thay trong viewport
+        this.bufferRows  = 0;
+        this.startIndex  = 0; // Chi muc bat dau cua data can render
+        this.endIndex = 0; // Chi muc ket thuc cua data can render
+        this.isLoading = false; // Co kiem soat trang thai dang tai du lieu
+        this.hasMore = true; // Kiem tra xem con du lieu de tai them khong
+        this.currentPage = 1; // Trang hien tai dang fetch tu API
+        this.cardHeight = 0; // Chieu cao cua mot card (bao gom ca gap)
+        
+        this.renderedCardIds = new Set(); // Set luu tru ID cac card hien dang co trong DOM
+
+        this.cardsContainer = document.getElementById('cardsContainer'); // Lay the chua scroll chinh
+        this.cardsSpacer = document.getElementById('cardsSpacer'); // Lay the tao chieu cao ao
+        this.cardsContent = document.getElementById('cardsContent'); // Lay the chua noi dung va offset
+        this.cardsGrid = document.getElementById('cardsGrid'); // Lay the luoi chua cac card thuc te
+        this.loader = document.getElementById('loader'); // Lay the loading ban dau
+        this.loadingMore = document.getElementById('loadingMore'); // Lay the loading khi tai them
+
+        this.init(); // Goi ham khoi tao
+    }
+
+    async init() {
+        await this.loadInitialData(); // Tai du lieu 100 records ban dau
+        this.cardsContainer.style.display = 'block'; // Hien thi container sau khi tai du lieu
+        
+        // 1. Do dac kich thuoc card/grid chinh xac
+        this.createTemporaryCard(); // Tao mot card tam thoi de do kich thuoc
+        this.calculateLayout(); // Tinh toan chieu cao card va so hang hien thi
+        this.removeTemporaryCard(); // Xoa card tam thoi
+        
+        // **TÍNH TOÁN LẠI VISIBLEROWS CHO 8 THẺ:**
+        // Nếu cardsPerRow = 2, cần 4 rows. Nếu cardsPerRow = 4, cần 2 rows.
+        // Thiết lập lại visibleRows để cửa sổ render ban đầu chỉ là 8.
+        this.visibleRows = Math.ceil(8 / this.cardsPerRow); 
+
+        this.setupScrollListener(); // Cai dat lang nghe su kien scroll
+        this.setupResizeListener(); // Cai dat lang nghe su kien resize
+        this.render(); // Bat dau render ao
+        this.loader.style.display = 'none'; // An loading ban dau
+    }
+    
+    // ... (loadInitialData, loadData, createTemporaryCard, removeTemporaryCard, setupScrollListener, setupResizeListener, checkLoadMore) ...
+    // Giữ nguyên các hàm này như trong phiên bản cuối cùng của bạn.
+    
+    async loadInitialData() { 
+        const promises = []; 
+        for (let page = 1; page <= 5; page++) {
+            promises.push(
+                fetch(`https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${page}&limit=20`)
+                    .then(res => res.json())
+            );
+        }
+        try {
+            const results = await Promise.all(promises); 
+            this.data = results.flat(); 
+            this.data.sort((a, b) => Number(a.id) - Number(b.id)); 
+            this.currentPage = 6; 
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+        }
+    }
+
+    async loadData() {
+        if (this.isLoading || !this.hasMore) return; 
+        this.isLoading = true; 
+        this.loadingMore.style.display = "block"; 
+
+        try {
+            const response = await fetch( 
+                `https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${this.currentPage}&limit=20`
+            );
+            const newData = await response.json(); 
+
+            if (newData.length === 0) { 
+                this.hasMore = false; 
+            } else {
+                this.data = [...this.data, ...newData]; 
+                this.data.sort((a, b) => Number(a.id) - Number(b.id)); 
+                this.currentPage++; 
+                this.render(); 
+            }
+        } catch (error) {
+            console.error("Error loading more data:", error);
+        }
+
+        this.isLoading = false; 
+        this.loadingMore.style.display = 'none'; 
+    }
+    
+    createTemporaryCard() {
+        if (this.data.length > 0 && !this.cardsGrid.querySelector('.card')) { 
+             const sampleCard = this.createCardElement(this.data[0]); 
+             sampleCard.style.visibility = 'hidden'; 
+             sampleCard.id = 'temp-card-for-measurement'; 
+             this.cardsGrid.appendChild(sampleCard); 
+        }
+    }
+
+    removeTemporaryCard() {
+        const tempCard = this.cardsGrid.querySelector('#temp-card-for-measurement'); 
+        if (tempCard) {
+            this.cardsGrid.removeChild(tempCard); 
+        }
+    }
+
+    calculateLayout() {
+        const gap = 30; 
+        const containerWidth = this.cardsGrid.offsetWidth; 
+        const cardMinWidth = 320; 
+        
+        this.cardsPerRow = Math.max(1, Math.floor((containerWidth + gap) / (cardMinWidth + gap))); 
+        
+        const firstCard = this.cardsGrid.querySelector('.card'); 
+        if (firstCard) {
+            const rect = firstCard.getBoundingClientRect(); 
+            this.cardHeight = rect.height + gap; 
+        } else {
+            this.cardHeight = 450; 
+        }
+
+        // KHÔNG dùng containerHeight để tính visibleRows ban đầu nữa
+        // if (this.cardHeight > 0) {
+        //     const containerHeight = this.cardsContainer.clientHeight;
+        //     this.visibleRows = Math.ceil(containerHeight / this.cardHeight) + 1;
+        // } else {
+        //      this.visibleRows = 5; 
+        //      this.cardHeight = 450; 
+        // }
+    }
+
+    setupScrollListener() {
+        let scrollTimeout; 
+        this.cardsContainer.addEventListener('scroll', () => { 
+            clearTimeout(scrollTimeout); 
+            scrollTimeout = setTimeout(() => { 
+                this.render(); 
+                this.checkLoadMore(); 
+            }, 16); 
+        });
+    }
+
+    setupResizeListener() {
+        let resizeTimeout; 
+        window.addEventListener('resize', () => { 
+            clearTimeout(resizeTimeout); 
+            resizeTimeout = setTimeout(() => { 
+                this.createTemporaryCard(); 
+                this.calculateLayout(); 
+                this.removeTemporaryCard(); 
+                // Sau khi resize, tính lại visibleRows theo kích thước màn hình thực tế (để Virtual Scrolling hoạt động bình thường trở lại)
+                if (this.cardHeight > 0) {
+                   const containerHeight = this.cardsContainer.clientHeight;
+                   this.visibleRows = Math.ceil(containerHeight / this.cardHeight) + 1;
+                }
+                this.render(); 
+            }, 300); 
+        });
+    }
+
+    checkLoadMore() {
+        const scrollTop = this.cardsContainer.scrollTop; 
+        const scrollHeight = this.cardsContainer.scrollHeight; 
+        const clientHeight = this.cardsContainer.clientHeight; 
+        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight; 
+
+        if (scrollPercentage > 0.8 && !this.isLoading && this.hasMore) { 
+            this.loadData(); 
+        }
+    }
+
+
+    render() {
+        if (this.data.length === 0 || this.cardHeight === 0 || this.cardsPerRow === 0) { 
+            this.createTemporaryCard(); 
+            this.calculateLayout(); 
+            this.removeTemporaryCard(); 
+            // Sau khi tính toán lại, set lại visibleRows cho lần render ban đầu là 8 thẻ
+            if (this.cardsPerRow > 0) {
+                 this.visibleRows = Math.ceil(8 / this.cardsPerRow); 
+                 this.bufferRows = 0; // Giữ 0 buffer để chỉ hiển thị 8
+            }
+            if (this.cardHeight === 0 || this.cardsPerRow === 0) return; 
+        }
+
+        const scrollTop = this.cardsContainer.scrollTop; 
+        const startRow = Math.floor(scrollTop / this.cardHeight); 
+
+        // SỬA ĐỔI: Không trừ buffer khi tính toán startIndex ban đầu, sau đó sử dụng buffer cho việc cuộn
+        const adjustedStartRow = Math.max(0, startRow - this.bufferRows); 
+        this.startIndex = adjustedStartRow * this.cardsPerRow; 
+        
+        // Điều chỉnh lại totalRowsToRender và bufferRows khi đã scroll
+        let currentVisibleRows = this.visibleRows;
+        let currentBufferRows = this.bufferRows;
+
+        // Nếu người dùng đã cuộn (scrollTop > 0), bật buffer và tính toán lại visibleRows thực tế
+        if (scrollTop > 0) {
+            currentBufferRows = 2; // Bật buffer lên 2 sau khi cuộn
+            // Tính lại số hàng hiển thị thực tế
+            currentVisibleRows = Math.ceil(this.cardsContainer.clientHeight / this.cardHeight) + 1;
+        }
+
+        const totalRowsToRender = currentVisibleRows + 2 * currentBufferRows; 
+        const targetEndRow = adjustedStartRow + totalRowsToRender; 
+        this.endIndex = Math.min(this.data.length, targetEndRow * this.cardsPerRow); 
+        
+        const totalRows = Math.ceil(this.data.length / this.cardsPerRow); 
+        const totalHeight = totalRows * this.cardHeight; 
+        this.cardsSpacer.style.height = totalHeight + 'px'; 
+
+        const offsetY = adjustedStartRow * this.cardHeight; 
+        this.cardsContent.style.paddingTop = offsetY + 'px'; 
+
+        this.renderVisibleCards(); 
+    }
+    
+    // ... (renderVisibleCards, createCardElement, createCardHTML) ...
+    // Giữ nguyên các hàm này.
+
+    renderVisibleCards() {
+        const visibleData = this.data.slice(this.startIndex, this.endIndex); 
+        const newVisibleIds = new Set(visibleData.map(item => Number(item.id))); 
+
+        const fragment = document.createDocumentFragment(); 
+        
+        let nodesToRemove = []; 
+        Array.from(this.cardsGrid.children).forEach(node => { 
+            const nodeId = Number(node.dataset.id); 
+            if (!newVisibleIds.has(nodeId)) { 
+                nodesToRemove.push(node); 
+                this.renderedCardIds.delete(nodeId); 
+            }
+        });
+        
+        nodesToRemove.forEach(node => this.cardsGrid.removeChild(node)); 
+        
+        visibleData.forEach(item => { 
+            let cardElement = this.cardsGrid.querySelector(`[data-id="${item.id}"]`); 
+            
+            if (!cardElement) { 
+                cardElement = this.createCardElement(item); 
+                this.renderedCardIds.add(Number(item.id)); 
+            }
+            fragment.appendChild(cardElement); 
+        });
+
+        this.cardsGrid.appendChild(fragment); 
+    }
+
+    createCardElement(item) {
+        const tempDiv = document.createElement('div'); 
+        tempDiv.innerHTML = this.createCardHTML(item).trim(); 
+        tempDiv.firstChild.setAttribute('data-id', item.id); 
+        return tempDiv.firstChild; 
+    }
+    
+    createCardHTML(item) {
+        const isMale = item.genre?.toLowerCase() === 'male'; 
+        const colorValue = item.color || '#000'; 
+
+        return `
+            <div class="card" data-id="${item.id}">
+                <div class="card-header">
+                    <img src="${item.avatar}" alt="${item.name}" class="avatar" loading="lazy">
+                    <div class="card-info">
+                        <div class="card-name">${item.name || 'N/A'}</div>
+                        <div class="card-company">${item.company || 'N/A'}</div>
+                    </div>
+                    <span class="card-badge ${isMale ? 'badge-male' : 'badge-female'}">
+                        <i class="fa-solid ${isMale ? 'fa-mars' : 'fa-venus'}"></i>
+                        ${isMale ? 'Nam' : 'Nu'}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="card-item"><i class="fa-solid fa-id-badge card-icon"></i> <strong>ID:</strong> ${item.id || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-regular fa-calendar-plus card-icon"></i> <strong>Created At:</strong> ${item.createdAt || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-user card-icon"></i> <strong>Name:</strong> ${item.name || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-venus-mars card-icon"></i> <strong>Genre:</strong> ${item.genre || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-building card-icon"></i> <strong>Company:</strong> ${item.company || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-calendar-days card-icon"></i> <strong>DOB:</strong> ${item.dob || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-clock card-icon"></i> <strong>Timezone:</strong> ${item.timezone || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-palette card-icon"></i> <strong>Color:</strong> <span class="color-text" style="color:${colorValue};">${colorValue}</span></div>
+                    <div class="card-item"><i class="fa-solid fa-music card-icon"></i> <strong>Music:</strong> ${item.music || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-map-location-dot card-icon"></i> <strong>Address:</strong> ${item.address || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-city card-icon"></i> <strong>City:</strong> ${item.city || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-map card-icon"></i> <strong>State:</strong> ${item.state || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-road card-icon"></i> <strong>Street:</strong> ${item.street || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-building-columns card-icon"></i> <strong>Building:</strong> ${item.building || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-hashtag card-icon"></i> <strong>ZIP:</strong> ${item.zip || item.zipcode || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-envelope card-icon"></i> <strong>Email:</strong> ${item.email || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-phone card-icon"></i> <strong>Phone:</strong> ${item.phone || 'N/A'}</div>
+                    <div class="card-item"><i class="fa-solid fa-lock card-icon"></i> <strong>Password:</strong> ${item.password || 'N/A'}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+new VirtualCards();

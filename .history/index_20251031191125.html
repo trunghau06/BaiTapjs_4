@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Bai Tap</title>
+</head>
+<body>
+    <div class="container">
+    <div class="header">
+        <h1>Virtual Dynamic Table</h1>
+        <p>Hiển Thị Thông Tin</p>
+    </div>
+
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text">Đang tải dữ liệu...</div>
+    </div>
+
+    <div id="tableContainer" class="table-container" style="display: none;">
+        <table id="virtualTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Genre</th>
+                    <th>Company</th>
+                    <th>DOB</th>
+                    <th>Timezone</th>
+                    <th>Color</th>
+                    <th>Music</th>
+                    <th>Address</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Street</th>
+                    <th>Building</th>
+                    <th>ZIP</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Password</th>
+                    <th>Created At</th>
+                    <th>Avatar</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div id="loadingMore" class="loading-more" style="display: none;">
+            <div class="spinner"></div>
+            <div>Đang tải thêm...</div>
+        </div>
+    </div>
+</div>
+
+    
+    <script src="main.js"></script>
+</body>
+</html>

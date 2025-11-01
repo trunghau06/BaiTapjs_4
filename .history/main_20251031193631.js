@@ -1,0 +1,282 @@
+class VirtualTable { // Đổi tên class để phản ánh là Bảng
+    constructor() {
+        this.data = [];
+        this.cardsPerRow = 1; // Luôn là 1 hàng cho bảng
+        this.visibleRows = 0;
+        this.bufferRows = 5; // Tăng buffer cho bảng để chuyển động mượt hơn
+        this.startIndex = 0;
+        this.endIndex = 0;
+        this.isLoading = false;
+        this.hasMore = true;
+        this.currentPage = 1;
+        this.rowHeight = 0; // Đổi từ cardHeight -> rowHeight
+        
+        this.renderedCardIds = new Set(); 
+
+        this.cardsContainer = document.getElementById('cardsContainer');
+        this.cardsSpacer = document.getElementById('cardsSpacer');
+        this.cardsContent = document.getElementById('cardsContent');
+        this.tableBody = document.getElementById('tableBody'); // Dùng ID mới từ HTML
+        this.loader = document.getElementById('loader');
+        this.loadingMore = document.getElementById('loadingMore');
+
+        this.init();
+    }
+
+    async init() {
+        await this.loadInitialData();
+        this.cardsContainer.style.display = 'block';
+        
+        // SỬA ĐỔI: Sử dụng requestAnimationFrame để đảm bảo DOM sẵn sàng cho việc đo đạc.
+        window.requestAnimationFrame(() => { 
+            this.createTemporaryRow(); // Thay thế createTemporaryCard
+            this.calculateLayout(); 
+            this.removeTemporaryRow(); // Thay thế removeTemporaryCard
+
+            this.setupScrollListener();
+            this.setupResizeListener();
+            this.render(); 
+            this.loader.style.display = 'none';
+        });
+    }
+
+    async loadInitialData() {
+        const promises = [];
+        for (let page = 1; page <= 5; page++) {
+            promises.push(
+                fetch(`https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${page}&limit=20`)
+                    .then(res => res.json())
+            );
+        }
+
+        try {
+            const results = await Promise.all(promises);
+            this.data = results.flat();
+            this.data.sort((a, b) => Number(a.id) - Number(b.id)); 
+            this.currentPage = 6;
+            console.log(`✅ Loaded ${this.data.length} records initially`);
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+        }
+    }
+
+    async loadData() {
+        if (this.isLoading || !this.hasMore) return;
+        this.isLoading = true;
+        this.loadingMore.style.display = "block";
+
+        try {
+            const response = await fetch(
+                `https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${this.currentPage}&limit=20`
+            );
+            const newData = await response.json();
+
+            if (newData.length === 0) {
+                this.hasMore = false;
+            } else {
+                this.data = [...this.data, ...newData];
+                this.data.sort((a, b) => Number(a.id) - Number(b.id)); 
+                this.currentPage++;
+                this.render(); 
+            }
+        } catch (error) {
+            console.error("Error loading more data:", error);
+        }
+
+        this.isLoading = false;
+        this.loadingMore.style.display = 'none';
+    }
+    
+    // Tạo hàng mẫu tạm thời (<tr>)
+    createTemporaryRow() {
+        // Sử dụng tableBody và tìm kiếm class data-row
+        if (this.data.length > 0 && !this.tableBody.querySelector('.data-row')) {
+            const sampleRow = this.createRowElement(this.data[0]);
+            sampleRow.style.visibility = 'hidden'; 
+            sampleRow.id = 'temp-row-for-measurement';
+            this.tableBody.appendChild(sampleRow);
+        }
+    }
+
+    // Xóa hàng tạm thời
+    removeTemporaryRow() {
+        const tempRow = this.tableBody.querySelector('#temp-row-for-measurement');
+        if (tempRow) {
+            this.tableBody.removeChild(tempRow); // Sửa lỗi tên biến
+        }
+    }
+
+    calculateLayout() {
+        this.cardsPerRow = 1; // Luôn là 1 cho bảng
+        
+        const firstRow = this.tableBody.querySelector('.data-row'); // Tìm hàng
+        if (firstRow) {
+            const rect = firstRow.getBoundingClientRect();
+            this.rowHeight = rect.height; // Dùng rowHeight, không cần cộng gap
+        } else {
+            this.rowHeight = 80; 
+        }
+
+        if (this.rowHeight > 0) {
+            const containerHeight = this.cardsContainer.clientHeight;
+            this.visibleRows = Math.ceil(containerHeight / this.rowHeight) + 1;
+        } else {
+            this.visibleRows = 10; 
+            this.rowHeight = 80;
+        }
+        console.log(`📐 Layout: rowHeight=${this.rowHeight}, visibleRows=${this.visibleRows}`);
+    }
+
+    setupScrollListener() {
+        let scrollTimeout;
+        this.cardsContainer.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                this.render();
+                this.checkLoadMore();
+            }, 16);
+        });
+    }
+
+    setupResizeListener() {
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.createTemporaryRow();
+                this.calculateLayout();
+                this.removeTemporaryRow(); 
+                this.render();
+            }, 300);
+        });
+    }
+
+    checkLoadMore() {
+        const scrollTop = this.cardsContainer.scrollTop;
+        const scrollHeight = this.cardsContainer.scrollHeight;
+        const clientHeight = this.cardsContainer.clientHeight;
+        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+        if (scrollPercentage > 0.8 && !this.isLoading && this.hasMore) {
+            this.loadData();
+        }
+    }
+
+    render() {
+        // Kiểm tra lại bố cục nếu chưa tính được hoặc có thay đổi
+        if (this.data.length === 0 || this.rowHeight === 0 || this.cardsPerRow === 0) {
+            this.createTemporaryRow();
+            this.calculateLayout();
+            this.removeTemporaryRow();
+            if (this.rowHeight === 0 || this.cardsPerRow === 0) return;
+        }
+
+        const scrollTop = this.cardsContainer.scrollTop;
+        const startRow = Math.floor(scrollTop / this.rowHeight);
+        
+        // Tính startIndex và offset có buffer (trừ)
+        const adjustedStartRow = Math.max(0, startRow - this.bufferRows); 
+        this.startIndex = adjustedStartRow; // Chỉ số hàng (cardsPerRow = 1)
+        
+        // Tính endIndex (visible + 2*buffer)
+        const totalRowsToRender = this.visibleRows + 2 * this.bufferRows; 
+        const targetEndRow = adjustedStartRow + totalRowsToRender; 
+        this.endIndex = Math.min(this.data.length, targetEndRow); 
+        
+        // Tính tổng height cho spacer (totalRows = this.data.length)
+        const totalRows = this.data.length;
+        const totalHeight = totalRows * this.rowHeight;
+        this.cardsSpacer.style.height = totalHeight + 'px';
+
+        // Set padding-top để tạo offset
+        const offsetY = adjustedStartRow * this.rowHeight; 
+        this.cardsContent.style.paddingTop = offsetY + 'px';
+
+        this.renderVisibleRows(); // Đổi tên hàm
+    }
+
+    /**
+     * DOM Reconciliation (chỉ thêm/xóa/sắp xếp lại các thẻ <tr>)
+     */
+    renderVisibleRows() {
+        const visibleData = this.data.slice(this.startIndex, this.endIndex);
+        const newVisibleIds = new Set(visibleData.map(item => Number(item.id)));
+
+        const fragment = document.createDocumentFragment();
+        
+        // 1. XÓA CÁC HÀNG CŨ (tr)
+        let nodesToRemove = [];
+        Array.from(this.tableBody.children).forEach(node => {
+            const nodeId = Number(node.dataset.id); 
+            if (!newVisibleIds.has(nodeId)) {
+                nodesToRemove.push(node);
+                this.renderedCardIds.delete(nodeId);
+            }
+        });
+        
+        nodesToRemove.forEach(node => this.tableBody.removeChild(node));
+        
+        // 2. THÊM/SẮP XẾP LẠI HÀNG (tr)
+        visibleData.forEach(item => {
+            const itemId = Number(item.id);
+            let rowElement = this.tableBody.querySelector(`[data-id="${item.id}"]`); // Tìm trong tableBody
+            
+            if (!rowElement) {
+                rowElement = this.createRowElement(item);
+                this.renderedCardIds.add(itemId); 
+            }
+            fragment.appendChild(rowElement);
+        });
+
+        this.tableBody.appendChild(fragment);
+
+        console.log(`🎨 Rendered ${this.tableBody.children.length} rows (index ${this.startIndex}-${this.endIndex})`);
+    }
+
+    createRowElement(item) { // Đổi tên hàm
+        const tempDiv = document.createElement('div');
+        // Đảm bảo tạo thẻ <tr> từ chuỗi HTML
+        tempDiv.innerHTML = String(this.createRowHTML(item)).trim();
+        
+        if (!tempDiv.firstChild) {
+            return document.createElement('tr'); 
+        }
+        
+        tempDiv.firstChild.setAttribute('data-id', item.id); 
+        return tempDiv.firstChild;
+    }
+    
+    // Tạo HTML cho hàng bảng (<tr>...</tr>)
+    createRowHTML(item) { // Đổi tên hàm
+        const isMale = item.genre?.toLowerCase() === 'male';
+        const badgeClass = isMale ? 'badge-male' : 'badge-female';
+        const badgeText = isMale ? 'Nam' : 'Nữ';
+        const badgeIcon = isMale ? 'fa-mars' : 'fa-venus';
+
+        return `
+            <tr class="data-row" data-id="${item.id}">
+                <td>${item.id || 'N/A'}</td>
+                <td><img src="${item.avatar}" alt="${item.name}" class="avatar-small" loading="lazy"></td>
+                <td class="name-column">
+                    <div class="card-name">${item.name || 'N/A'}</div>
+                    <div class="card-company">${item.company || 'N/A'}</div>
+                </td>
+                <td>
+                    <span class="card-badge ${badgeClass}">
+                        <i class="fa-solid ${badgeIcon}"></i> ${badgeText}
+                    </span>
+                </td>
+                <td>${item.dob || 'N/A'}</td>
+                <td>${item.timezone || 'N/A'}</td>
+                <td><span style="color:${item.color || '#000'}; font-weight: 700;">${item.color || 'N/A'}</span></td>
+                <td class="email-column">${item.email || 'N/A'}</td>
+                <td>${item.phone || 'N/A'}</td>
+                <td>${item.city || 'N/A'}</td>
+                <td>${item.state || 'N/A'}</td>
+                <td>${item.zip || item.zipcode || 'N/A'}</td>
+            </tr>
+        `;
+    }
+}
+
+new VirtualTable();
