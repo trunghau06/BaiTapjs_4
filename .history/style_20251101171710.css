@@ -353,15 +353,14 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* ✅ Cho phép text xuống dòng */
     color: var(--text-secondary);
-    word-break: break-word;
-    gap: 8px;
+    word-break: break-word; /* ✅ Ngắt chữ nếu quá dài */
 }
 
 .card-item strong {
-    display: inline-block;   
-    width: 110px;     
+   display: inline-block;   
+    width: 80px;            
     font-weight: 700;
     color: var(--text-primary);
 }

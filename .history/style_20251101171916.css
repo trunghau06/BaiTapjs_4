@@ -360,8 +360,8 @@ body {
 }
 
 .card-item strong {
-    display: inline-block;   
-    width: 110px;     
+   display: inline-block;   
+    width: 80px;            
     font-weight: 700;
     color: var(--text-primary);
 }

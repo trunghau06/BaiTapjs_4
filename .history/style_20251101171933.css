@@ -361,7 +361,8 @@ body {
 
 .card-item strong {
     display: inline-block;   
-    width: 110px;     
+    width: 110px; /* ✅ cố định độ rộng của label (tùy chỉnh cho đều) */
+    text-align: right;          
     font-weight: 700;
     color: var(--text-primary);
 }

@@ -356,12 +356,11 @@ body {
     flex-wrap: wrap;
     color: var(--text-secondary);
     word-break: break-word;
-    gap: 8px;
 }
 
 .card-item strong {
-    display: inline-block;   
-    width: 110px;     
+   display: inline-block;   
+    width: 80px;            
     font-weight: 700;
     color: var(--text-primary);
 }
