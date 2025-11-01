@@ -152,24 +152,20 @@ class ResponsiveVirtualView {
     }
 
     setupScrollListener() {
-        let ticking = false;
-        let lastScrollTop = 0;
-        const threshold = 50;
+    let ticking = false;
 
-        this.cardsContainer.addEventListener('scroll', () => {
-            const scrollTop = this.cardsContainer.scrollTop;
+    this.cardsContainer.addEventListener('scroll', () => {
+        if (!ticking) {
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                this.render();
+                this.checkLoadMore();
+                ticking = false;
+            });
+        }
+    }, { passive: true });
+}
 
-            if (Math.abs(scrollTop - lastScrollTop) > threshold && !ticking) {
-                ticking = true;
-                window.requestAnimationFrame(() => {
-                    this.render();          
-                    this.checkLoadMore();    
-                    lastScrollTop = scrollTop;
-                    ticking = false;
-                });
-            }
-        });
-    }
 
     setupResizeListener() {
         let resizeTimeout;

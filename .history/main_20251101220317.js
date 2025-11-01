@@ -171,6 +171,7 @@ class ResponsiveVirtualView {
         });
     }
 
+
     setupResizeListener() {
         let resizeTimeout;
         window.addEventListener('resize', () => {

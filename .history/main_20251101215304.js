@@ -35,24 +35,34 @@ class ResponsiveVirtualView {
         return window.innerWidth <= 768; // kiem tra xem hien tai co phai mobile view hay khong
     }
 
-    async init() {
-        await this.loadInitialData(); // load du lieu ban dau tu API
-        this.cardsContainer.style.display = 'block'; 
-        
-        window.requestAnimationFrame(() => { 
-            this.updateViewMode(); 
-            
-            this.createTemporaryElement(); 
-            this.calculateLayout(); 
-            this.removeTemporaryElement(); 
+   async init() {
+        const loader = document.getElementById('loader');
+        loader.style.display = 'flex';
 
-            this.setupScrollListener(); 
-            this.setupResizeListener(); 
-            this.setupHorizontalSync();
+        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Gọi API
+        const apiPromise = fetch('https://671891927fc4c5ff8f49fcac.mockapi.io/v2/users')
+            .then(res => res.json());
+
+        const result = await Promise.race([apiPromise, timeoutPromise]);
+
+
+        loader.style.display = 'none';
+        document.getElementById('cardsContainer').style.display = 'block';
+
+        // Nếu API chưa xong sau 1s thì load sau (ẩn spinner rồi render sau)
+        if (!result) {
+            apiPromise.then(data => {
+                this.data = data;
+                this.render();
+            });
+        } else {
+            this.data = result;
             this.render();
-            this.loader.style.display = 'none'; 
-        });
+        }
     }
+
 
     async loadInitialData() {
         const promises = [];
@@ -153,23 +163,18 @@ class ResponsiveVirtualView {
 
     setupScrollListener() {
         let ticking = false;
-        let lastScrollTop = 0;
-        const threshold = 50;
-
         this.cardsContainer.addEventListener('scroll', () => {
-            const scrollTop = this.cardsContainer.scrollTop;
-
-            if (Math.abs(scrollTop - lastScrollTop) > threshold && !ticking) {
-                ticking = true;
+            if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    this.render();          
-                    this.checkLoadMore();    
-                    lastScrollTop = scrollTop;
+                    this.render();
+                    this.checkLoadMore();
                     ticking = false;
                 });
+                ticking = true;
             }
         });
     }
+
 
     setupResizeListener() {
         let resizeTimeout;
@@ -191,7 +196,7 @@ class ResponsiveVirtualView {
         const clientHeight     = this.cardsContainer.clientHeight;
         const scrollPercentage = (scrollTop + clientHeight) / scrollHeight; 
 
-        if (scrollPercentage > 0.6 && !this.isLoading && this.hasMore) {
+        if (scrollPercentage > 0.8 && !this.isLoading && this.hasMore) {
             this.loadData();
         }
     }
