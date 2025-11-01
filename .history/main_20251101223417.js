@@ -74,31 +74,41 @@ class ResponsiveVirtualView {
     }
 
     async loadData() {
-        if (this.isLoading || !this.hasMore) return; 
-        this.isLoading = true; 
-        this.loadingMore.style.display = "block";
+    if (this.isLoading || !this.hasMore) return;
+    this.isLoading = true;
+    this.loadingMore.style.display = "block";
 
-        try {
-            const response = await fetch(
-                `https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${this.currentPage}&limit=20`
-            );
-            const newData = await response.json();
+    // 🧭 Ghi lại vị trí hiện tại trước khi load thêm
+    const prevScrollTop = this.cardsContainer.scrollTop;
+    const prevScrollHeight = this.cardsContainer.scrollHeight;
 
-            if (newData.length === 0) {
-                this.hasMore = false; // khong con du lieu de load
-            } else {
-                this.data = [...this.data, ...newData]; // them du lieu moi vao mang data
-                this.data.sort((a, b) => Number(a.id) - Number(b.id)); // sap xep lai theo id
-                this.currentPage++;
-                this.render();
-            }
-        } catch (error) {
-            console.error("Error loading more data:", error);
+    try {
+        const response = await fetch(
+            `https://671891927fc4c5ff8f49fcac.mockapi.io/v2?page=${this.currentPage}&limit=20`
+        );
+        const newData = await response.json();
+
+        if (newData.length === 0) {
+            this.hasMore = false;
+        } else {
+            this.data = [...this.data, ...newData];
+            this.data.sort((a, b) => Number(a.id) - Number(b.id));
+            this.currentPage++;
+            this.render();
         }
-
-        this.isLoading = false; 
-        this.loadingMore.style.display = 'none';
+    } catch (error) {
+        console.error("Error loading more data:", error);
     }
+
+    // 🔧 Sau khi render, khôi phục lại vị trí cuộn chính xác
+    const newScrollHeight = this.cardsContainer.scrollHeight;
+    const diff = newScrollHeight - prevScrollHeight;
+    this.cardsContainer.scrollTop = prevScrollTop + diff;
+
+    this.isLoading = false;
+    this.loadingMore.style.display = "none";
+}
+
 
     updateViewMode() {  
         // can goi lai khi resize

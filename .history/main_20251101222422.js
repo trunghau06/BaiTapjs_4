@@ -171,7 +171,6 @@ class ResponsiveVirtualView {
         });
     }
 
-
     setupResizeListener() {
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -192,9 +191,9 @@ class ResponsiveVirtualView {
         const clientHeight     = this.cardsContainer.clientHeight;
         const scrollPercentage = (scrollTop + clientHeight) / scrollHeight; 
 
-        if (scrollPercentage > 0.6 && !this.isLoading && this.hasMore) {
-            this.loadData();
-        }
+        if (scrollPosition >= scrollHeight - 600 && !this.isLoading && this.hasMore) {
+    this.load();
+}
     }
 
     setupHorizontalSync() {

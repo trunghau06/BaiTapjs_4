@@ -88,7 +88,7 @@ class ResponsiveVirtualView {
                 this.hasMore = false; // khong con du lieu de load
             } else {
                 this.data = [...this.data, ...newData]; // them du lieu moi vao mang data
-                this.data.sort((a, b) => Number(a.id) - Number(b.id)); // sap xep lai theo id
+                this.data.sort((a, b) => Number(a.id) - Number(b.id));
                 this.currentPage++;
                 this.render();
             }
@@ -171,7 +171,6 @@ class ResponsiveVirtualView {
         });
     }
 
-
     setupResizeListener() {
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -187,15 +186,16 @@ class ResponsiveVirtualView {
     }
 
     checkLoadMore() {
-        const scrollTop        = this.cardsContainer.scrollTop;
-        const scrollHeight     = this.cardsContainer.scrollHeight;
-        const clientHeight     = this.cardsContainer.clientHeight;
-        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight; 
+    const scrollTop    = this.cardsContainer.scrollTop;
+    const scrollHeight = this.cardsContainer.scrollHeight;
+    const clientHeight = this.cardsContainer.clientHeight;
 
-        if (scrollPercentage > 0.6 && !this.isLoading && this.hasMore) {
-            this.loadData();
-        }
+    // 🔥 Khi còn cách đáy 200px là load thêm liền
+    if (scrollTop + clientHeight >= scrollHeight - 200 && !this.isLoading && this.hasMore) {
+        this.loadData();
     }
+}
+
 
     setupHorizontalSync() {
         const table       = document.querySelector('.data-table');

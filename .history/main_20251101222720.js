@@ -77,6 +77,7 @@ class ResponsiveVirtualView {
         if (this.isLoading || !this.hasMore) return; 
         this.isLoading = true; 
         this.loadingMore.style.display = "block";
+        const prevScrollTop = this.cardsContainer.scrollTop;
 
         try {
             const response = await fetch(
@@ -97,6 +98,7 @@ class ResponsiveVirtualView {
         }
 
         this.isLoading = false; 
+        
         this.loadingMore.style.display = 'none';
     }
 
@@ -171,7 +173,6 @@ class ResponsiveVirtualView {
         });
     }
 
-
     setupResizeListener() {
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -187,15 +188,16 @@ class ResponsiveVirtualView {
     }
 
     checkLoadMore() {
-        const scrollTop        = this.cardsContainer.scrollTop;
-        const scrollHeight     = this.cardsContainer.scrollHeight;
-        const clientHeight     = this.cardsContainer.clientHeight;
-        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight; 
+    const scrollTop    = this.cardsContainer.scrollTop;
+    const scrollHeight = this.cardsContainer.scrollHeight;
+    const clientHeight = this.cardsContainer.clientHeight;
 
-        if (scrollPercentage > 0.6 && !this.isLoading && this.hasMore) {
-            this.loadData();
-        }
+    // 🔥 Khi còn cách đáy 200px là load thêm liền
+    if (scrollTop + clientHeight >= scrollHeight - 200 && !this.isLoading && this.hasMore) {
+        this.loadData();
     }
+}
+
 
     setupHorizontalSync() {
         const table       = document.querySelector('.data-table');
