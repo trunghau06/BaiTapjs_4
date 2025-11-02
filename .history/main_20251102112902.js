@@ -32,6 +32,7 @@ function switchViewMode() {
     }
 }
 
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 

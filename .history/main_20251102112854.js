@@ -32,6 +32,7 @@ function switchViewMode() {
     }
 }
 
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 
@@ -74,6 +75,7 @@ async function loadMoreData() {
     }
 }
 
+// -------------------- Hiển thị tất cả items --------------------
 function displayAllItems() {
     tableBodyElement.innerHTML = '';
     cardViewElement.innerHTML = '';

@@ -32,6 +32,7 @@ function switchViewMode() {
     }
 }
 
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 
@@ -74,6 +75,7 @@ async function loadMoreData() {
     }
 }
 
+// -------------------- Hiển thị tất cả items --------------------
 function displayAllItems() {
     tableBodyElement.innerHTML = '';
     cardViewElement.innerHTML = '';
@@ -161,13 +163,14 @@ function displayAllItems() {
     });
 }
 
+// -------------------- Hiển thị thông báo hoàn tất --------------------
 function showCompletionMessage() {
     const totalItems = allLoadedData.length;
     
     if (loadMoreElement) {
         loadMoreElement.innerHTML = `
             <div style="color: #28a745; font-weight: bold; font-size: 1.2em;">
-                <strong>${totalItems} items</strong>
+                ✅ Hoàn tất! Đã tải tất cả <strong>${totalItems} items</strong>
             </div>
         `;
         loadMoreElement.style.display = "block";
@@ -177,6 +180,7 @@ function showCompletionMessage() {
     }
 }
 
+// -------------------- Xử lý scroll --------
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
     

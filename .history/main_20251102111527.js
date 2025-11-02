@@ -1,7 +1,7 @@
 const API_URL = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
 let currentPage = 1;
-const itemsPerPage = 12;
-let allLoadedData = [];
+const itemsPerPage = 9; // render 10 items mỗi lần
+let allLoadedData = []; // lưu tất cả data đã load
 let loading = false;
 let moreDataAvailable = true;
 
@@ -32,15 +32,17 @@ function switchViewMode() {
     }
 }
 
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 
     loading = true;
-    
+
+    // Hiển thị loader
     if (currentPage === 1) {
-        loaderElement.style.display = "block";
+        loaderElement.style.display = "block"; // loader đầu
     } else {
-        loadMoreElement.style.display = "block";
+        loadMoreElement.style.display = "block"; // loader cuối danh sách
     }
 
     try {
@@ -50,34 +52,33 @@ async function loadMoreData() {
         if (dataList.length === 0) {
             moreDataAvailable = false;
         } else {
+            // Lưu tất cả data
             allLoadedData = [...allLoadedData, ...dataList];
-            allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            allLoadedData.sort((a,b)=>parseInt(a.id)-parseInt(b.id));
+
+            // Render tất cả items
             displayAllItems();
+
             currentPage++;
-            
-            // Hiện container sau khi load data đầu tiên
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
         }
     } catch (error) {
         console.error(error);
     }
 
+    // Ẩn loader sau khi load xong
     loadMoreElement.style.display = "none";
+    loaderElement.style.display = "none";
     loading = false;
-    
-    // Hiển thị thông báo khi hết data
-    if (!moreDataAvailable) {
-        showCompletionMessage();
-    }
 }
 
+
+// -------------------- Hiển thị tất cả items --------------------
 function displayAllItems() {
+    // Xóa hết items cũ
     tableBodyElement.innerHTML = '';
     cardViewElement.innerHTML = '';
     
+    // Render lại tất cả data
     allLoadedData.forEach(user => {
         // -------- Table row --------
         const tableRow = document.createElement("tr");
@@ -161,40 +162,21 @@ function displayAllItems() {
     });
 }
 
-function showCompletionMessage() {
-    const totalItems = allLoadedData.length;
-    
-    if (loadMoreElement) {
-        loadMoreElement.innerHTML = `
-            <div style="color: #28a745; font-weight: bold; font-size: 1.2em;">
-                <strong>${totalItems} items</strong>
-            </div>
-        `;
-        loadMoreElement.style.display = "block";
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-        }, 4000);
-    }
-}
-
+// -------------------- Xử lý scroll --------
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-    
+    // Khi scroll đến gần cuối (còn 200px)
     if (scrollTop + clientHeight >= scrollHeight - 200 && !loading && moreDataAvailable) {
-        // Cập nhật text trong loadingMore trước khi hiển thị
-        const totalItems = allLoadedData.length;
-        const loadingText = loadMoreElement.querySelector('div:last-child');
-        if (loadingText) {
-            loadingText.textContent = `Đang tải thêm... (Đã có ${totalItems} items)`;
-        }
         loadMoreData();
     }
 });
 
+// -------------------- Xử lý resize --------
 window.addEventListener('resize', () => {
     switchViewMode();
 });
 
+// -------------------- Đồng bộ horizontal scroll --------
 if (fakeScrollBar) {
     const fakeScrollContent = document.getElementById('fakeScroll');
     const dataTable = document.querySelector('.data-table');
@@ -215,5 +197,6 @@ if (fakeScrollBar) {
     }
 }
 
+// -------------------- Khởi tạo --------
 switchViewMode();
 loadMoreData();
