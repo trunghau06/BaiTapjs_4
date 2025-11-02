@@ -51,14 +51,18 @@ async function loadMoreData() {
         if (dataList.length === 0) {
             moreDataAvailable = false;
         } else {
-            if (currentPage === 2) {
-                dataList.reverse();
-            }
-            allLoadedData = [...allLoadedData, ...dataList];
+                    // nối dữ liệu mới
+        if (currentPage === 2) {
+            // batch 13–24 -> đảo ngược thứ tự
+            dataList.reverse();
+        }
+        allLoadedData = [...allLoadedData, ...dataList];
 
-            allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        // sắp xếp chung tăng dần
+        allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
-            appendNewItems(dataList);
+        // render batch mới
+        appendNewItems(dataList);
 
             currentPage++;
 

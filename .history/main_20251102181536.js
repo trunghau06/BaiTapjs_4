@@ -52,12 +52,15 @@ async function loadMoreData() {
             moreDataAvailable = false;
         } else {
             if (currentPage === 2) {
+                // batch 13–24 -> đảo ngược thứ tự
                 dataList.reverse();
             }
             allLoadedData = [...allLoadedData, ...dataList];
 
+            // sắp xếp chung tăng dần
             allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
+            // render batch mới
             appendNewItems(dataList);
 
             currentPage++;

@@ -56,8 +56,10 @@ async function loadMoreData() {
             }
             allLoadedData = [...allLoadedData, ...dataList];
 
+        
             allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
+            // render batch mới
             appendNewItems(dataList);
 
             currentPage++;
