@@ -25,7 +25,8 @@
 
         <div id="cardsContainer" class="cards-container" style="display: none;">
             <div id="cardsSpacer" class="cards-spacer">
-                <div id="cardsContent" class="cards-content"> 
+                <div id="cardsContent" class="cards-content">
+                    
                     <div id="tableView" class="view-wrapper">
                          <table class="data-table">
                             <thead>
@@ -53,14 +54,17 @@
                             </thead>
                             <tbody id="tableBody"> 
                             </tbody>
+                            <tfoot>
+                                <tr id="loadingMore" style="display: none;">
+                                    <td colspan="19" style="text-align: center; padding: 20px;">
+                                        <div>Đang tải thêm...</div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                     
                     <div id="cardView" class="view-wrapper card-list-grid"> </div>
-
-                     <div id="loadingMore" class="loading-more" style="display: none;">
-                        <div>Đang tải thêm...</div>
-                    </div>
                 </div>
             </div>
         </div>

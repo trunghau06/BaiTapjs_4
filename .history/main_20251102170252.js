@@ -71,8 +71,10 @@ async function loadMoreData() {
         showCompletionMessage();
     } else {
         // delay chi khi con du lieu tiep
-       setTimeout(() => {
-            loadMoreElement.style.display = "none"; 
+        setTimeout(() => {
+            if (!checkMobileView()) {
+                loadMoreElement.style.display = "none";
+            }
             loading = false;
         }, 500);
     }

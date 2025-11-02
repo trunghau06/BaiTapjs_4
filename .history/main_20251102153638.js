@@ -14,12 +14,12 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-// kiem tra xem co phai mobile view khong
+// Kiểm tra mobile view
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
-// cap nhat che do hien thi theo mobile hay desktop
+// Cập nhật chế độ hiển thị
 function switchViewMode() {
     if (checkMobileView()) {
         tableSection.style.display = 'none';
@@ -32,66 +32,69 @@ function switchViewMode() {
     }
 }
 
-// load them du lieu tu API
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
-
     loading = true;
-    
-    if (currentPage === 1) {
-        loaderElement.style.display = "block";
-    } else {
-        loadMoreElement.style.display = "block";
-    }
+
+    // Hiển thị thông báo cuối batch hiện tại
+    loadMoreElement.textContent = `Đang tải thêm... (Đã có ${allLoadedData.length} items)`;
+    loadMoreElement.style.display = "block";
+
+    // Delay 0.5s để người dùng thấy thông báo
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
         const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsPerPage}`);
         const dataList = await response.json();
 
-        if (dataList.length === 0) {
-            moreDataAvailable = false;
-        } else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-            appendNewItems(dataList);
-            currentPage++;
+       if (dataList.length > 0) {
+    allLoadedData = [...allLoadedData, ...dataList];
+    allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+    displayAllItems();
 
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
-        }
-    } catch (error) {
-        console.error(error);
-    }
+    // --- Thêm text “Đang tải thêm...” cuối batch ---
+    const loadingCard = document.createElement("div");
+    loadingCard.className = "card loading-card";
+    loadingCard.textContent = `Đang tải thêm... (Đã có ${allLoadedData.length} items)`;
+    loadingCard.style.textAlign = "center";
+    loadingCard.style.fontWeight = "bold";
+    loadingCard.style.padding = "15px 0";
+    loadingCard.style.backgroundColor = "#f0f0f0";
+    
+    // Xóa card cũ nếu còn
+    const prevLoading = cardViewElement.querySelector(".loading-card");
+    if (prevLoading) prevLoading.remove();
+    
+    cardViewElement.appendChild(loadingCard);
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none"; // an ngay khi het du lieu
-        loading = false;
-        showCompletionMessage();
-    } else {
-        // delay chi khi con du lieu tiep
-       setTimeout(() => {
-            loadMoreElement.style.display = "none"; 
-            loading = false;
-        }, 500);
-    }
+    currentPage++;
 }
 
-// them cac phan tu moi vao table va card view
-function appendNewItems(dataList) {
-    dataList.forEach(user => {
-        // Table
+    } catch (error) {
+        console.error(error);
+        loadMoreElement.style.display = "none";
+    }
+
+    loading = false;
+}
+
+
+function displayAllItems() {
+    tableBodyElement.innerHTML = '';
+    cardViewElement.innerHTML = '';
+    
+    allLoadedData.forEach(user => {
+        // -------- Table row --------
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
         tableRow.style.backgroundColor = user.color || "#fff";
-
+        
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isGenderMale ? 'Nam' : 'Nu';
+        const genderLabel = isGenderMale ? 'Nam' : 'Nữ';
         const genderIconClass = isGenderMale ? 'fa-mars' : 'fa-venus';
-
+        
         tableRow.innerHTML = `
             <td>${user.id || 'N/A'}</td>
             <td><img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small" loading="lazy"></td>
@@ -119,14 +122,14 @@ function appendNewItems(dataList) {
         `;
         tableBodyElement.appendChild(tableRow);
 
-        // Card
+        // -------- Card --------
         const cardElement = document.createElement("div");
         cardElement.setAttribute("data-id", user.id);
         cardElement.className = "card";
         cardElement.style.backgroundColor = user.color || "#fff";
-
-        const displayGender = isGenderMale ? 'Nam' : 'Nu';
-
+        
+        const displayGender = isGenderMale ? 'Nam' : 'Nữ';
+        
         cardElement.innerHTML = `
             <div class="card-header">
                 <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar" loading="lazy">
@@ -163,17 +166,33 @@ function appendNewItems(dataList) {
     });
 }
 
+function showCompletionMessage() {
+    const totalItems = allLoadedData.length;
+    
+    if (loadMoreElement) {
+        loadMoreElement.innerHTML = `
+            <div style="color: #28a745; font-weight: bold; font-size: 1.2em;">
+                <strong>${totalItems} items</strong>
+            </div>
+        `;
+        loadMoreElement.style.display = "block";
+        setTimeout(() => {
+            loadMoreElement.style.display = "none";
+        }, 4000);
+    }
+}
+
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-
-    if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
-            loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `Dang tai them..`;
-            loadMoreData();
-        } else {
-            loadMoreElement.style.display = "none";
+    
+    if (scrollTop + clientHeight >= scrollHeight - 200 && !loading && moreDataAvailable) {
+        // Cập nhật text trong loadingMore trước khi hiển thị
+        const totalItems = allLoadedData.length;
+        const loadingText = loadMoreElement.querySelector('div:last-child');
+        if (loadingText) {
+            loadingText.textContent = `Đang tải thêm... (Đã có ${totalItems} items)`;
         }
+        loadMoreData();
     }
 });
 
@@ -181,7 +200,6 @@ window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-// setup fake scrollbar dong bo voi scroll container
 if (fakeScrollBar) {
     const fakeScrollContent = document.getElementById('fakeScroll');
     const dataTable = document.querySelector('.data-table');
@@ -202,6 +220,5 @@ if (fakeScrollBar) {
     }
 }
 
-// khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();

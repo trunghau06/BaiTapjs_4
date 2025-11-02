@@ -14,12 +14,12 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-// kiem tra xem co phai mobile view khong
+// Kiểm tra mobile view
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
-// cap nhat che do hien thi theo mobile hay desktop
+// Cập nhật chế độ hiển thị
 function switchViewMode() {
     if (checkMobileView()) {
         tableSection.style.display = 'none';
@@ -32,7 +32,7 @@ function switchViewMode() {
     }
 }
 
-// load them du lieu tu API
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 
@@ -53,9 +53,10 @@ async function loadMoreData() {
         } else {
             allLoadedData = [...allLoadedData, ...dataList];
             allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-            appendNewItems(dataList);
+            displayAllItems();
             currentPage++;
-
+            
+            // Hiện container sau khi load data đầu tiên
             if (currentPage === 2) {
                 scrollContainer.style.display = "block";
                 loaderElement.style.display = "none";
@@ -65,33 +66,32 @@ async function loadMoreData() {
         console.error(error);
     }
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none"; // an ngay khi het du lieu
-        loading = false;
+    loadMoreElement.style.display = "none";
+    loading = false;
+    
+    // Hiển thị thông báo khi hết data
+    if (!moreDataAvailable) {
         showCompletionMessage();
-    } else {
-        // delay chi khi con du lieu tiep
-       setTimeout(() => {
-            loadMoreElement.style.display = "none"; 
-            loading = false;
-        }, 500);
     }
 }
 
-// them cac phan tu moi vao table va card view
-function appendNewItems(dataList) {
-    dataList.forEach(user => {
-        // Table
+// -------------------- Hiển thị tất cả items --------------------
+function displayAllItems() {
+    tableBodyElement.innerHTML = '';
+    cardViewElement.innerHTML = '';
+    
+    allLoadedData.forEach((user, index) => {
+        // -------- Table row --------
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
         tableRow.style.backgroundColor = user.color || "#fff";
-
+        
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isGenderMale ? 'Nam' : 'Nu';
+        const genderLabel = isGenderMale ? 'Nam' : 'Nữ';
         const genderIconClass = isGenderMale ? 'fa-mars' : 'fa-venus';
-
+        
         tableRow.innerHTML = `
             <td>${user.id || 'N/A'}</td>
             <td><img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small" loading="lazy"></td>
@@ -118,15 +118,27 @@ function appendNewItems(dataList) {
             <td>${user.password || 'N/A'}</td>
         `;
         tableBodyElement.appendChild(tableRow);
+        
+        // Thêm hàng "Đang tải thêm..." sau mỗi 12 items (trừ item cuối cùng)
+        if ((index + 1) % itemsPerPage === 0 && (index + 1) < allLoadedData.length) {
+            const loadingRow = document.createElement("tr");
+            loadingRow.className = "loading-row";
+            loadingRow.innerHTML = `
+                <td colspan="19" style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); color: #fff; font-weight: bold;">
+                    ⏳ Đã tải ${index + 1} items
+                </td>
+            `;
+            tableBodyElement.appendChild(loadingRow);
+        }
 
-        // Card
+        // -------- Card --------
         const cardElement = document.createElement("div");
         cardElement.setAttribute("data-id", user.id);
         cardElement.className = "card";
         cardElement.style.backgroundColor = user.color || "#fff";
-
-        const displayGender = isGenderMale ? 'Nam' : 'Nu';
-
+        
+        const displayGender = isGenderMale ? 'Nam' : 'Nữ';
+        
         cardElement.innerHTML = `
             <div class="card-header">
                 <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar" loading="lazy">
@@ -160,28 +172,60 @@ function appendNewItems(dataList) {
             </div>
         `;
         cardViewElement.appendChild(cardElement);
+        
+        // Thêm card "Đã tải X items" sau mỗi 12 items (trừ item cuối cùng)
+        if ((index + 1) % itemsPerPage === 0 && (index + 1) < allLoadedData.length) {
+            const loadingCard = document.createElement("div");
+            loadingCard.className = "card loading-card";
+            loadingCard.style.cssText = "text-align: center; padding: 20px; background: rgba(102, 126, 234, 0.3); border: 2px dashed #667eea;";
+            loadingCard.innerHTML = `
+                <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">
+                    ⏳ Đã tải ${index + 1} items
+                </div>
+            `;
+            cardViewElement.appendChild(loadingCard);
+        }
     });
 }
 
+// -------------------- Hiển thị thông báo hoàn tất --------------------
+function showCompletionMessage() {
+    const totalItems = allLoadedData.length;
+    
+    if (loadMoreElement) {
+        loadMoreElement.innerHTML = `
+            <div style="color: #28a745; font-weight: bold; font-size: 1.2em;">
+                ✅ Hoàn tất! Đã tải tất cả <strong>${totalItems} items</strong>
+            </div>
+        `;
+        loadMoreElement.style.display = "block";
+        setTimeout(() => {
+            loadMoreElement.style.display = "none";
+        }, 4000);
+    }
+}
+
+// -------------------- Xử lý scroll --------
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-
-    if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
-            loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `Dang tai them..`;
-            loadMoreData();
-        } else {
-            loadMoreElement.style.display = "none";
+    
+    if (scrollTop + clientHeight >= scrollHeight - 200 && !loading && moreDataAvailable) {
+        // Cập nhật text trong loadingMore trước khi hiển thị
+        const totalItems = allLoadedData.length;
+        const loadingText = loadMoreElement.querySelector('div:last-child');
+        if (loadingText) {
+            loadingText.textContent = `Đang tải thêm... (Đã có ${totalItems} items)`;
         }
+        loadMoreData();
     }
 });
 
+// -------------------- Xử lý resize --------
 window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-// setup fake scrollbar dong bo voi scroll container
+// -------------------- Đồng bộ horizontal scroll --------
 if (fakeScrollBar) {
     const fakeScrollContent = document.getElementById('fakeScroll');
     const dataTable = document.querySelector('.data-table');
@@ -202,6 +246,6 @@ if (fakeScrollBar) {
     }
 }
 
-// khoi tao view va load batch dau tien
+// -------------------- Khởi tạo --------
 switchViewMode();
 loadMoreData();

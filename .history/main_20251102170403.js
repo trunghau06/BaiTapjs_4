@@ -72,7 +72,7 @@ async function loadMoreData() {
     } else {
         // delay chi khi con du lieu tiep
        setTimeout(() => {
-            loadMoreElement.style.display = "none"; 
+            loadMoreElement.style.display = "none"; // ẩn luôn ở cả mobile và desktop
             loading = false;
         }, 500);
     }

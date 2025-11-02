@@ -71,8 +71,10 @@ async function loadMoreData() {
         showCompletionMessage();
     } else {
         // delay chi khi con du lieu tiep
-       setTimeout(() => {
-            loadMoreElement.style.display = "none"; 
+        setTimeout(() => {
+            if (!checkMobileView()) {
+                loadMoreElement.style.display = "none";
+            }
             loading = false;
         }, 500);
     }
@@ -163,6 +165,7 @@ function appendNewItems(dataList) {
     });
 }
 
+// lang nghe su kien scroll tren container de load them
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 
@@ -177,6 +180,7 @@ scrollContainer.addEventListener("scroll", () => {
     }
 });
 
+// lang nghe su kien resize de thay doi view
 window.addEventListener('resize', () => {
     switchViewMode();
 });

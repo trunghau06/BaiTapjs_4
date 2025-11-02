@@ -14,12 +14,12 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-// kiem tra xem co phai mobile view khong
+// Kiểm tra mobile view
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
-// cap nhat che do hien thi theo mobile hay desktop
+// Cập nhật chế độ hiển thị
 function switchViewMode() {
     if (checkMobileView()) {
         tableSection.style.display = 'none';
@@ -32,16 +32,17 @@ function switchViewMode() {
     }
 }
 
-// load them du lieu tu API
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
 
     loading = true;
-    
+
     if (currentPage === 1) {
-        loaderElement.style.display = "block";
-    } else {
+        loaderElement.style.display = "block"; // lần đầu load
+    } else if (!checkMobileView() && moreDataAvailable) {
+        // desktop: hiển thị loading khi còn dữ liệu
         loadMoreElement.style.display = "block";
+        loadMoreElement.querySelector('div:last-child').textContent = "Đang tải thêm..";
     }
 
     try {
@@ -52,33 +53,22 @@ async function loadMoreData() {
             moreDataAvailable = false;
         } else {
             allLoadedData = [...allLoadedData, ...dataList];
-            allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
             appendNewItems(dataList);
             currentPage++;
-
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
         }
-    } catch (error) {
-        console.error(error);
+    } catch (err) {
+        console.error(err);
     }
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none"; // an ngay khi het du lieu
-        loading = false;
-        showCompletionMessage();
-    } else {
-        // delay chi khi con du lieu tiep
-       setTimeout(() => {
+    setTimeout(() => {
+        loaderElement.style.display = "none"; 
+        if (!checkMobileView() || moreDataAvailable) {
             loadMoreElement.style.display = "none"; 
-            loading = false;
-        }, 500);
-    }
+        }
+        loading = false;
+    }, 1200);
 }
 
-// them cac phan tu moi vao table va card view
 function appendNewItems(dataList) {
     dataList.forEach(user => {
         // Table
@@ -89,7 +79,7 @@ function appendNewItems(dataList) {
 
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isGenderMale ? 'Nam' : 'Nu';
+        const genderLabel = isGenderMale ? 'Nam' : 'Nữ';
         const genderIconClass = isGenderMale ? 'fa-mars' : 'fa-venus';
 
         tableRow.innerHTML = `
@@ -125,7 +115,7 @@ function appendNewItems(dataList) {
         cardElement.className = "card";
         cardElement.style.backgroundColor = user.color || "#fff";
 
-        const displayGender = isGenderMale ? 'Nam' : 'Nu';
+        const displayGender = isGenderMale ? 'Nam' : 'Nữ';
 
         cardElement.innerHTML = `
             <div class="card-header">
@@ -167,12 +157,14 @@ scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 
     if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
+        loadMoreData(); // van goi de append record moi
+
+        // Chi hien loading neu khong phai mobile (desktop/table view)
+        if (!checkMobileView()) {
             loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `Dang tai them..`;
-            loadMoreData();
+            loadMoreElement.querySelector('div:last-child').textContent = `Đang tải thêm..`;
         } else {
-            loadMoreElement.style.display = "none";
+            loadMoreElement.style.display = "none"; // an luon khi mobile
         }
     }
 });
@@ -181,7 +173,6 @@ window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-// setup fake scrollbar dong bo voi scroll container
 if (fakeScrollBar) {
     const fakeScrollContent = document.getElementById('fakeScroll');
     const dataTable = document.querySelector('.data-table');
@@ -202,6 +193,5 @@ if (fakeScrollBar) {
     }
 }
 
-// khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();
