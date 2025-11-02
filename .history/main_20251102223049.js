@@ -94,7 +94,7 @@ function appendNewItems(dataList) {
 
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isGenderMale ? 'Nam' : 'Nữ';
+        const genderLabel = isGenderMale ? 'Nam' : 'Nu';
         const genderIconClass = isGenderMale ? 'fa-mars' : 'fa-venus';
 
         tableRow.innerHTML = `
@@ -130,7 +130,7 @@ function appendNewItems(dataList) {
         cardElement.className = "card";
         cardElement.style.backgroundColor = user.color || "#FFFFFF";
 
-        const displayGender = isGenderMale ? 'Nam' : 'Nứ';
+        const displayGender = isGenderMale ? 'Nam' : 'Nu';
 
         cardElement.innerHTML = `
             <div class="card-header">
@@ -174,7 +174,7 @@ scrollContainer.addEventListener("scroll", () => {
     if (scrollTop + clientHeight >= scrollHeight - 1) {
         if (moreDataAvailable) {
             loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
+            loadMoreElement.querySelector('div:last-child').textContent = ``;
             loadMoreData();
         } else {
             loadMoreElement.style.display = "none";

@@ -174,7 +174,7 @@ scrollContainer.addEventListener("scroll", () => {
     if (scrollTop + clientHeight >= scrollHeight - 1) {
         if (moreDataAvailable) {
             loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
+            loadMoreElement.querySelector('div:last-child').textContent = `.`;
             loadMoreData();
         } else {
             loadMoreElement.style.display = "none";
