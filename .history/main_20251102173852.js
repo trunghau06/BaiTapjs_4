@@ -84,7 +84,7 @@ function appendNewItems(dataList) {
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
-        tableRow.style.backgroundColor = user.color || "#FFFFFF";
+        tableRow.style.backgroundColor = user.color || "#fff";
 
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
