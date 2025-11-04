@@ -19,7 +19,7 @@ const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
 const newRecord = {
     avatar: "https://via.placeholder.com/60",
-    name: "Nguyen Trung Hau",
+    name: "Nguyen Trung Ha",
     company: "ABC Company",
     genre: "male",
     email: "a@example.com",
@@ -57,6 +57,7 @@ async function addNewRecord() {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("Lỗi khi thêm record:", errorText);
+            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
             return;
         }
 

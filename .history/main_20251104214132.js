@@ -57,6 +57,7 @@ async function addNewRecord() {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("Lỗi khi thêm record:", errorText);
+            // ❌ Bỏ alert, chỉ ghi log ra console thôi
             return;
         }
 
@@ -69,6 +70,7 @@ async function addNewRecord() {
         console.error("Lỗi kết nối API:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {

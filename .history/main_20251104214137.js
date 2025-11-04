@@ -57,6 +57,7 @@ async function addNewRecord() {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("Lỗi khi thêm record:", errorText);
+
             return;
         }
 
