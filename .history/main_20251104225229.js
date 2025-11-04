@@ -72,7 +72,6 @@ async function addNewRecord(record) {
     }
 }
 
-
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
@@ -91,17 +90,12 @@ async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
     loading = true;
 
-    if (offset === 0) {
-        loaderElement.style.display = "block";
-    } else {
-        loadMoreElement.style.display = "block";
-    }
+    loaderElement.style.display = "block";
 
     const remainingItems = 100 - allLoadedData.length;
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
-
         const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
         const allData = await response.json();
 
@@ -116,27 +110,21 @@ async function loadMoreData() {
             offset += dataList.length;
             nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
             doubleNext = !doubleNext;
-
-            if (allLoadedData.length === dataList.length) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
         }
+
+        requestAnimationFrame(() => {
+            loaderElement.style.display = "none";
+            loading = false;
+        });
+
     } catch (error) {
         console.error(error);
         moreDataAvailable = false;
-    }
-
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
+        loaderElement.style.display = "none";
         loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            loading = false;
-        }, 500);
     }
 }
+
 
 // them cac phan tu moi vao table va card view
 function appendNewItems(dataList) {

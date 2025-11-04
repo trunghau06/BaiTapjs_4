@@ -72,7 +72,6 @@ async function addNewRecord(record) {
     }
 }
 
-
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
@@ -101,7 +100,6 @@ async function loadMoreData() {
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
-
         const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
         const allData = await response.json();
 
@@ -116,27 +114,21 @@ async function loadMoreData() {
             offset += dataList.length;
             nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
             doubleNext = !doubleNext;
-
-            if (allLoadedData.length === dataList.length) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
         }
+
+        // Ẩn spinner ngay sau khi render xong
+        loaderElement.style.display = "none";
+        loadMoreElement.style.display = "none";
+        loading = false;
     } catch (error) {
         console.error(error);
         moreDataAvailable = false;
-    }
-
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
+        loaderElement.style.display = "none";
         loadMoreElement.style.display = "none";
         loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            loading = false;
-        }, 500);
     }
 }
+
 
 // them cac phan tu moi vao table va card view
 function appendNewItems(dataList) {

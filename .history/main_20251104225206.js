@@ -72,7 +72,6 @@ async function addNewRecord(record) {
     }
 }
 
-
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
