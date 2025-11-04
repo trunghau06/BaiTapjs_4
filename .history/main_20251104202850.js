@@ -246,14 +246,15 @@ scrollContainer.addEventListener("scroll", () => {
 document.addEventListener("DOMContentLoaded", () => {
   loaderElement.style.display = "block";
   scrollContainer.style.display = "none";
-
   loadMoreData();
+
 
   setTimeout(() => {
     loaderElement.style.display = "none";
     scrollContainer.style.display = "block";
   }, 500);
 });
+
 
 window.addEventListener('resize', () => {
     switchViewMode();
@@ -270,8 +271,9 @@ if (fakeScrollBar) {
         }
     });
 }
-
+switchViewMode();
 addNewRecord(); 
+loadMoreData(); 
 
 
 

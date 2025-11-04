@@ -246,9 +246,11 @@ scrollContainer.addEventListener("scroll", () => {
 document.addEventListener("DOMContentLoaded", () => {
   loaderElement.style.display = "block";
   scrollContainer.style.display = "none";
-
+  
+  // Gọi loadMoreData() để lấy dữ liệu ban đầu
   loadMoreData();
 
+  // Ẩn spinner sau 0.5 giây để không xoay quá lâu
   setTimeout(() => {
     loaderElement.style.display = "none";
     scrollContainer.style.display = "block";

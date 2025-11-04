@@ -120,7 +120,7 @@ async function loadMoreData() {
         console.error(error);
         moreDataAvailable = false;
     } finally {
-        loaderElement.style.display = "none"; 
+        loaderElement.style.display = "none"; // spinner tắt
         loadMoreElement.style.display = "none";
         loading = false;
     }
@@ -244,15 +244,12 @@ scrollContainer.addEventListener("scroll", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+
   loaderElement.style.display = "block";
+
   scrollContainer.style.display = "none";
 
   loadMoreData();
-
-  setTimeout(() => {
-    loaderElement.style.display = "none";
-    scrollContainer.style.display = "block";
-  }, 500);
 });
 
 window.addEventListener('resize', () => {
@@ -270,8 +267,9 @@ if (fakeScrollBar) {
         }
     });
 }
-
+switchViewMode();
 addNewRecord(); 
+loadMoreData(); 
 
 
 

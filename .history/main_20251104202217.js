@@ -99,7 +99,9 @@ async function loadMoreData() {
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
-        const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
+        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${limit}&sortBy=id&order=asc`);
+currentPage++;
+
         const allData = await response.json();
 
         const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
@@ -120,7 +122,7 @@ async function loadMoreData() {
         console.error(error);
         moreDataAvailable = false;
     } finally {
-        loaderElement.style.display = "none"; 
+        loaderElement.style.display = "none"; // spinner tắt
         loadMoreElement.style.display = "none";
         loading = false;
     }
@@ -244,15 +246,12 @@ scrollContainer.addEventListener("scroll", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+
   loaderElement.style.display = "block";
+
   scrollContainer.style.display = "none";
 
   loadMoreData();
-
-  setTimeout(() => {
-    loaderElement.style.display = "none";
-    scrollContainer.style.display = "block";
-  }, 500);
 });
 
 window.addEventListener('resize', () => {
@@ -270,8 +269,9 @@ if (fakeScrollBar) {
         }
     });
 }
-
+switchViewMode();
 addNewRecord(); 
+loadMoreData(); 
 
 
 

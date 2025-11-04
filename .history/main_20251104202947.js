@@ -246,7 +246,8 @@ scrollContainer.addEventListener("scroll", () => {
 document.addEventListener("DOMContentLoaded", () => {
   loaderElement.style.display = "block";
   scrollContainer.style.display = "none";
-
+  
+  // Gọi loadMoreData() để lấy dữ liệu ban đầu
   loadMoreData();
 
   setTimeout(() => {
