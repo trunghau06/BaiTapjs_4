@@ -259,20 +259,19 @@ window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-if (fakeScrollBar) {
-    fakeScrollBar.addEventListener('scroll', () => {
-        scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
-    });
-    
-    scrollContainer.addEventListener('scroll', () => {
-        if (!checkMobileView()) {
-            fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
-        }
-    });
+if (fakeScrollBar) { 
+    fakeScrollBar.addEventListener('scroll', () => { 
+        scrollContainer.scrollLeft = fakeScrollBar.scrollLeft; 
+    }); 
+
+    scrollContainer.addEventListener('scroll', () => { 
+        if (!checkMobileView()) { 
+            fakeScrollBar.scrollLeft = scrollContainer.scrollLeft; 
+        } 
+    }); 
 }
 
 addNewRecord(); 
-switchViewMode();
 
 
 

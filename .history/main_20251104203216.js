@@ -74,15 +74,20 @@ async function addNewRecord() {
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
+        // Chế độ mobile
         tableSection.style.display = 'none';
         cardSection.style.display = 'flex';
-        if (fakeScrollBar) fakeScrollBar.style.display = 'none';
+        scrollContainer.style.overflowX = 'auto'; // Cho cuộn ngang tự nhiên
+        if (fakeScrollBar) fakeScrollBar.style.display = 'none'; // ✅ Ẩn thanh cuộn giả
     } else {
+        // Chế độ desktop
         tableSection.style.display = 'block';
         cardSection.style.display = 'none';
-        if (fakeScrollBar) fakeScrollBar.style.display = 'block';
+        scrollContainer.style.overflowX = 'hidden';
+        if (fakeScrollBar) fakeScrollBar.style.display = 'block'; // ✅ Hiện lại khi quay về desktop
     }
 }
+
 
 // load them du lieu tu API
 async function loadMoreData() {
@@ -272,7 +277,6 @@ if (fakeScrollBar) {
 }
 
 addNewRecord(); 
-switchViewMode();
 
 
 

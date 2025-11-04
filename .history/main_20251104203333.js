@@ -272,7 +272,6 @@ if (fakeScrollBar) {
 }
 
 addNewRecord(); 
-switchViewMode();
 
 
 
