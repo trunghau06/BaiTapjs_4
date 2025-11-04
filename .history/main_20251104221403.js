@@ -8,26 +8,6 @@ let nextBatchSize = itemsPerPage;
 let doubleNext = true; 
 let offset = 0; 
 
-const newRecord = {
-  avatar: "https://via.placeholder.com/60",
-  name: "Nguyen Van A",
-  company: "ABC Company",
-  genre: "male",
-  email: "a@example.com",
-  phone: "0123456789",
-  dob: "2000-01-01",
-  color: "#ff0000",
-  timezone: "GMT+7",
-  music: "Pop",
-  city: "Ho Chi Minh City",
-  state: "Vietnam",
-  address: "123 Street",
-  street: "Le Loi",
-  building: "Building A",
-  zip: "700000",
-  createdAt: new Date().toISOString(),
-  password: "123456"
-};
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement = document.getElementById("cardView");
@@ -66,11 +46,13 @@ async function addNewRecord(record) {
         // Chỉ append record mới vào DOM
         appendNewItems([addedData]);
 
+        // Optional: scroll lên đầu
         scrollContainer.scrollTop = 0;
     } catch (error) {
         console.error("Lỗi kết nối API:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
@@ -255,7 +237,4 @@ if (fakeScrollBar) {
 
 // khoi tao view va load batch dau tien
 switchViewMode();
-loadMoreData().then(() => {
-    addNewRecord(newRecord);
-});
-
+loadMoreData();

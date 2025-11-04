@@ -8,27 +8,6 @@ let nextBatchSize = itemsPerPage;
 let doubleNext = true; 
 let offset = 0; 
 
-const newRecord = {
-  avatar: "https://via.placeholder.com/60",
-  name: "Nguyen Van A",
-  company: "ABC Company",
-  genre: "male",
-  email: "a@example.com",
-  phone: "0123456789",
-  dob: "2000-01-01",
-  color: "#ff0000",
-  timezone: "GMT+7",
-  music: "Pop",
-  city: "Ho Chi Minh City",
-  state: "Vietnam",
-  address: "123 Street",
-  street: "Le Loi",
-  building: "Building A",
-  zip: "700000",
-  createdAt: new Date().toISOString(),
-  password: "123456"
-};
-
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement = document.getElementById("cardView");
 const loaderElement = document.getElementById("loader");
@@ -38,39 +17,53 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
+const newRecord = {
+    avatar: "https://via.placeholder.com/60",
+    name: "Nguyen Van A",
+    company: "ABC Company",
+    genre: "male",
+    email: "a@example.com",
+    phone: "0123456789",
+    dob: "2000-01-01",
+    color: "#ff0000",
+    timezone: "GMT+7",
+    music: "Pop",
+    city: "Ho Chi Minh City",
+    state: "Vietnam",
+    address: "123 Street",
+    street: "Le Loi",
+    building: "Building A",
+    zip: "700000",
+    createdAt: new Date().toISOString(),
+    password: "123456"
+};
+
+
 // kiem tra xem co phai mobile view khong
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
-async function addNewRecord(record) {
+async function addNewRecord() {
     try {
         const response = await fetch(`${API_URL}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(record)
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(newRecord)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            return;
-        }
-
         const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
+        console.log("Đã thêm record mới");
 
-        // Thêm vào đầu allLoadedData nhưng không gọi renderTable
         allLoadedData.unshift(addedData);
-
-        // Chỉ append record mới vào DOM
-        appendNewItems([addedData]);
-
-        scrollContainer.scrollTop = 0;
+        renderTable(allLoadedData);
     } catch (error) {
-        console.error("Lỗi kết nối API:", error);
+        console.error("Lỗi khi thêm record:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
@@ -221,6 +214,14 @@ function appendNewItems(dataList) {
         cardViewElement.appendChild(cardElement);
     });
 }
+function renderTable(dataList) {
+    // Xóa dữ liệu cũ
+    tableBodyElement.innerHTML = "";
+    cardViewElement.innerHTML = "";
+
+    // Hiển thị lại toàn bộ
+    appendNewItems(dataList);
+}
 
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
@@ -235,6 +236,7 @@ scrollContainer.addEventListener("scroll", () => {
         }
     }
 });
+
 
 window.addEventListener('resize', () => {
     switchViewMode();
@@ -251,11 +253,9 @@ if (fakeScrollBar) {
         }
     });
 }
-
-
-// khoi tao view va load batch dau tien
 switchViewMode();
-loadMoreData().then(() => {
-    addNewRecord(newRecord);
-});
+addNewRecord(); 
+loadMoreData(); 
+
+
 

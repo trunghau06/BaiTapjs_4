@@ -66,11 +66,13 @@ async function addNewRecord(record) {
         // Chỉ append record mới vào DOM
         appendNewItems([addedData]);
 
+        // Optional: scroll lên đầu
         scrollContainer.scrollTop = 0;
     } catch (error) {
         console.error("Lỗi kết nối API:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
@@ -176,7 +178,7 @@ function appendNewItems(dataList) {
             <td>${user.createdAt || 'N/A'}</td>
             <td>${user.password || 'N/A'}</td>
         `;
-        tableBodyElement.appendChild(tableRow);
+        tableBodyElement.insertBefore(tableRow, tableBodyElement.firstChild);
 
         // Card
         const cardElement = document.createElement("div");
@@ -218,7 +220,7 @@ function appendNewItems(dataList) {
                 <div class="card-item"><i class="fa-solid fa-lock card-icon"></i> <strong>Password:</strong> ${user.password || 'N/A'}</div>
             </div>
         `;
-        cardViewElement.appendChild(cardElement);
+        cardViewElement.insertBefore(cardElement, cardViewElement.firstChild);
     });
 }
 

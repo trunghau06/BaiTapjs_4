@@ -66,11 +66,13 @@ async function addNewRecord(record) {
         // Chỉ append record mới vào DOM
         appendNewItems([addedData]);
 
+        // Optional: scroll lên đầu
         scrollContainer.scrollTop = 0;
     } catch (error) {
         console.error("Lỗi kết nối API:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
@@ -136,6 +138,11 @@ async function loadMoreData() {
         }, 500);
     }
 }
+
+loadMoreData().then(() => {
+    addNewRecord(newRecord);
+});
+
 
 // them cac phan tu moi vao table va card view
 function appendNewItems(dataList) {
@@ -255,7 +262,4 @@ if (fakeScrollBar) {
 
 // khoi tao view va load batch dau tien
 switchViewMode();
-loadMoreData().then(() => {
-    addNewRecord(newRecord);
-});
-
+loadMoreData();
