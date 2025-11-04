@@ -1,12 +1,11 @@
 const API_URL = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = 12; 
 let allLoadedData = [];
 let loading = false;
 let moreDataAvailable = true;
-let nextBatchSize = itemsPerPage; 
-let doubleNext = true; 
-let offset = 0; 
+let loadCount = 0; 
+const displayBatches = [12, 24];
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement = document.getElementById("cardView");
@@ -17,58 +16,9 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-const newRecord = {
-    avatar: "https://via.placeholder.com/60",
-    name: "Nguyen Van A",
-    company: "ABC Company",
-    genre: "male",
-    email: "a@example.com",
-    phone: "0123456789",
-    dob: "2000-01-01",
-    color: "#ff0000",
-    timezone: "GMT+7",
-    music: "Pop",
-    city: "Ho Chi Minh City",
-    state: "Vietnam",
-    address: "123 Street",
-    street: "Le Loi",
-    building: "Building A",
-    zip: "700000",
-    createdAt: new Date().toISOString(),
-    password: "123456"
-};
-
-
 // kiem tra xem co phai mobile view khong
 function checkMobileView() {
     return window.innerWidth <= 768;
-}
-
-async function addNewRecord() {
-    try {
-        const response = await fetch(`${API_URL}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(newRecord)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
-            return;
-        }
-
-        const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
-
-        allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
-    } catch (error) {
-        console.error("Lỗi kết nối API:", error);
-    }
 }
 
 // cap nhat che do hien thi theo mobile hay desktop
@@ -89,40 +39,45 @@ async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
     loading = true;
 
-    if (offset === 0) {
+    // xác định số lượng item cho lần load này
+    const itemsToLoad = (loadCount % 2 === 0) ? firstBatch : secondBatch;
+
+    if (currentPage === 1) {
         loaderElement.style.display = "block";
     } else {
         loadMoreElement.style.display = "block";
     }
 
-    const remainingItems = 100 - allLoadedData.length;
-    const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
-
     try {
-        const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
-        const allData = await response.json();
-
-        const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
+        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsToLoad}&sortBy=id&order=asc`);
+        const dataList = await response.json();
 
         if (dataList.length === 0) {
             moreDataAvailable = false;
         } else {
             allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
 
-            offset += dataList.length;
-            nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
-            doubleNext = !doubleNext;
+            // Tính số lượng hiển thị lần này (xen kẽ 12 → 24)
+const displayBatches = [12, 24];
+const displayCount = displayBatches[loadCount % displayBatches.length];
 
-            scrollContainer.style.display = "block";
+// Tính index để lấy item từ dataList
+const endIndex = Math.min(displayCount, dataList.length);
+
+// Append chỉ những item cần hiển thị lần này
+appendNewItems(dataList.slice(0, endIndex));
+
+
+            currentPage++;
+            loadCount++; // tăng lần load
+
+            if (currentPage === 2) {
+                scrollContainer.style.display = "block";
+                loaderElement.style.display = "none";
+            }
         }
     } catch (error) {
         console.error(error);
-        moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
     }
 
     if (!moreDataAvailable || allLoadedData.length >= 100) {
@@ -130,7 +85,7 @@ async function loadMoreData() {
         loading = false;
     } else {
         setTimeout(() => {
-            loadMoreElement.style.display = "none";
+            loadMoreElement.style.display = "none"; 
             loading = false;
         }, 500);
     }
@@ -220,14 +175,6 @@ function appendNewItems(dataList) {
         cardViewElement.appendChild(cardElement);
     });
 }
-function renderTable(dataList) {
-    // Xóa dữ liệu cũ
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML = "";
-
-    // Hiển thị lại toàn bộ
-    appendNewItems(dataList);
-}
 
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
@@ -241,15 +188,6 @@ scrollContainer.addEventListener("scroll", () => {
             loadMoreElement.style.display = "none";
         }
     }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  loaderElement.style.display = "block";
-
-  scrollContainer.style.display = "none";
-
-  loadMoreData();
 });
 
 window.addEventListener('resize', () => {
@@ -267,9 +205,8 @@ if (fakeScrollBar) {
         }
     });
 }
+
+
+// khoi tao view va load batch dau tien
 switchViewMode();
-addNewRecord(); 
-loadMoreData(); 
-
-
-
+loadMoreData();

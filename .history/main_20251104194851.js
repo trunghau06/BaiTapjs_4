@@ -54,22 +54,16 @@ async function addNewRecord() {
             body: JSON.stringify(newRecord)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
-            return;
-        }
-
         const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
+        console.log("Đã thêm record mới");
 
         allLoadedData.unshift(addedData);
         renderTable(allLoadedData);
     } catch (error) {
-        console.error("Lỗi kết nối API:", error);
+        console.error("Lỗi khi thêm record:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
@@ -99,6 +93,7 @@ async function loadMoreData() {
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
+
         const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
         const allData = await response.json();
 
@@ -114,15 +109,14 @@ async function loadMoreData() {
             nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
             doubleNext = !doubleNext;
 
-            scrollContainer.style.display = "block";
+            if (allLoadedData.length === dataList.length) {
+                scrollContainer.style.display = "block";
+                loaderElement.style.display = "none";
+            }
         }
     } catch (error) {
         console.error(error);
         moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
     }
 
     if (!moreDataAvailable || allLoadedData.length >= 100) {

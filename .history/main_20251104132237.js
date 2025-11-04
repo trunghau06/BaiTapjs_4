@@ -1,12 +1,9 @@
 const API_URL = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = 12;
 let allLoadedData = [];
 let loading = false;
 let moreDataAvailable = true;
-let nextBatchSize = itemsPerPage; 
-let doubleNext = true; 
-let offset = 0; 
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement = document.getElementById("cardView");
@@ -17,58 +14,9 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-const newRecord = {
-    avatar: "https://via.placeholder.com/60",
-    name: "Nguyen Van A",
-    company: "ABC Company",
-    genre: "male",
-    email: "a@example.com",
-    phone: "0123456789",
-    dob: "2000-01-01",
-    color: "#ff0000",
-    timezone: "GMT+7",
-    music: "Pop",
-    city: "Ho Chi Minh City",
-    state: "Vietnam",
-    address: "123 Street",
-    street: "Le Loi",
-    building: "Building A",
-    zip: "700000",
-    createdAt: new Date().toISOString(),
-    password: "123456"
-};
-
-
 // kiem tra xem co phai mobile view khong
 function checkMobileView() {
     return window.innerWidth <= 768;
-}
-
-async function addNewRecord() {
-    try {
-        const response = await fetch(`${API_URL}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(newRecord)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
-            return;
-        }
-
-        const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
-
-        allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
-    } catch (error) {
-        console.error("Lỗi kết nối API:", error);
-    }
 }
 
 // cap nhat che do hien thi theo mobile hay desktop
@@ -85,55 +33,88 @@ function switchViewMode() {
 }
 
 // load them du lieu tu API
+// THAY THẾ TOÀN BỘ LOGIC CỦA HÀM loadMoreData BẰNG PHIÊN BẢN NÀY
+
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
-    loading = true;
 
-    if (offset === 0) {
+    loading = true;
+    
+    // Tính toán batch size động
+    const dynamicLimit = currentPage % 2 === 1 ? 12 : 24;
+    let currentPageSize = dynamicLimit; 
+    
+    // Điều chỉnh lần tải cuối cùng
+    const MAX_ITEMS_TOTAL = 100;
+    if (allLoadedData.length + currentPageSize > MAX_ITEMS_TOTAL) {
+        currentPageSize = MAX_ITEMS_TOTAL - allLoadedData.length;
+    }
+    
+    // Hiển thị loader
+    if (currentPage === 1) {
         loaderElement.style.display = "block";
     } else {
         loadMoreElement.style.display = "block";
+        loadMoreElement.querySelector('div:last-child').textContent = `Đang tải ${currentPageSize} item...`;
     }
 
-    const remainingItems = 100 - allLoadedData.length;
-    const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
-
     try {
-        const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
-        const allData = await response.json();
+        // 1. Fetch data
+        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${currentPageSize}&sortBy=id&order=asc`);
+        const dataList = await response.json();
 
-        const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
-
-        if (dataList.length === 0) {
+        if (dataList.length === 0 || allLoadedData.length >= MAX_ITEMS_TOTAL) {
             moreDataAvailable = false;
         } else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
+            // 2. Nối dữ liệu mới
+            allLoadedData = allLoadedData.concat(dataList);
 
-            offset += dataList.length;
-            nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
-            doubleNext = !doubleNext;
+            // 3. SẮP XẾP LẠI (Client-side Numeric Sort)
+            allLoadedData.sort((a, b) => Number(a.id) - Number(b.id));
 
-            scrollContainer.style.display = "block";
+            // 4. 🎯 GỌI HÀM TÁI RENDER ĐÃ SẮP XẾP (displaySortedItems)
+            displaySortedItems(allLoadedData); 
+
+            currentPage++;
+
+            if (currentPage === 2) {
+                scrollContainer.style.display = "block";
+                loaderElement.style.display = "none";
+            }
         }
     } catch (error) {
         console.error(error);
-        moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
     }
+    
+    // Ẩn loader
+    loadMoreElement.style.display = "none";
+    loading = false;
+}
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
-        loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            loading = false;
-        }, 500);
-    }
+// 2. KHÔI PHỤC HÀM displaySortedItems (Chức năng xóa và vẽ lại)
+// Thêm hàm này vào file JS của bạn
+function displaySortedItems(userList) {
+    // 1. Xóa toàn bộ DOM hiện tại
+    tableBodyElement.innerHTML = '';
+    cardViewElement.innerHTML = '';
+
+    const fragmentTable = document.createDocumentFragment();
+    const fragmentCard = document.createDocumentFragment();
+
+    userList.forEach(user => {
+        // 2. Tạo và thêm vào Fragment
+        fragmentTable.appendChild(createTableRow(user));
+        fragmentCard.appendChild(createCardElement(user));
+    });
+    
+    // 3. Thêm Fragment vào DOM
+    tableBodyElement.appendChild(fragmentTable);
+    cardViewElement.appendChild(fragmentCard);
+    
+    // 4. Giới hạn DOM tối đa (Simulated Trimming)
+    // Cần định nghĩa hàm limitDOMItems
+    // limitDOMItems(tableBodyElement);
+    // limitDOMItems(cardViewElement);
 }
 
 // them cac phan tu moi vao table va card view
@@ -220,14 +201,6 @@ function appendNewItems(dataList) {
         cardViewElement.appendChild(cardElement);
     });
 }
-function renderTable(dataList) {
-    // Xóa dữ liệu cũ
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML = "";
-
-    // Hiển thị lại toàn bộ
-    appendNewItems(dataList);
-}
 
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
@@ -241,15 +214,6 @@ scrollContainer.addEventListener("scroll", () => {
             loadMoreElement.style.display = "none";
         }
     }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  loaderElement.style.display = "block";
-
-  scrollContainer.style.display = "none";
-
-  loadMoreData();
 });
 
 window.addEventListener('resize', () => {
@@ -267,9 +231,8 @@ if (fakeScrollBar) {
         }
     });
 }
+
+
+// khoi tao view va load batch dau tien
 switchViewMode();
-addNewRecord(); 
-loadMoreData(); 
-
-
-
+loadMoreData();

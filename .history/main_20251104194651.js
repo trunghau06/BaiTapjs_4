@@ -71,6 +71,8 @@ async function addNewRecord() {
     }
 }
 
+
+
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
@@ -99,6 +101,7 @@ async function loadMoreData() {
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
+
         const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
         const allData = await response.json();
 
@@ -114,15 +117,14 @@ async function loadMoreData() {
             nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
             doubleNext = !doubleNext;
 
-            scrollContainer.style.display = "block";
+            if (allLoadedData.length === dataList.length) {
+                scrollContainer.style.display = "block";
+                loaderElement.style.display = "none";
+            }
         }
     } catch (error) {
         console.error(error);
         moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
     }
 
     if (!moreDataAvailable || allLoadedData.length >= 100) {
@@ -243,14 +245,7 @@ scrollContainer.addEventListener("scroll", () => {
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
 
-  loaderElement.style.display = "block";
-
-  scrollContainer.style.display = "none";
-
-  loadMoreData();
-});
 
 window.addEventListener('resize', () => {
     switchViewMode();

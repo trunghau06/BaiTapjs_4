@@ -56,7 +56,7 @@ async function addNewRecord() {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
+            console.error("❌ Lỗi khi thêm record:", errorText);
             alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
             return;
         }
@@ -67,7 +67,7 @@ async function addNewRecord() {
         allLoadedData.unshift(addedData);
         renderTable(allLoadedData);
     } catch (error) {
-        console.error("Lỗi kết nối API:", error);
+        console.error("🚨 Lỗi kết nối API:", error);
     }
 }
 

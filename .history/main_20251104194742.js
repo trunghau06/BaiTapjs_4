@@ -71,6 +71,8 @@ async function addNewRecord() {
     }
 }
 
+
+
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
@@ -244,13 +246,13 @@ scrollContainer.addEventListener("scroll", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-
   loaderElement.style.display = "block";
 
   scrollContainer.style.display = "none";
 
   loadMoreData();
 });
+
 
 window.addEventListener('resize', () => {
     switchViewMode();

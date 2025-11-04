@@ -1,12 +1,9 @@
 const API_URL = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = 12;
 let allLoadedData = [];
 let loading = false;
 let moreDataAvailable = true;
-let nextBatchSize = itemsPerPage; 
-let doubleNext = true; 
-let offset = 0; 
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement = document.getElementById("cardView");
@@ -17,61 +14,12 @@ const tableSection = document.getElementById("tableView");
 const cardSection = document.getElementById("cardView");
 const fakeScrollBar = document.querySelector(".fake-scroll-wrapper");
 
-const newRecord = {
-    avatar: "https://via.placeholder.com/60",
-    name: "Nguyen Van A",
-    company: "ABC Company",
-    genre: "male",
-    email: "a@example.com",
-    phone: "0123456789",
-    dob: "2000-01-01",
-    color: "#ff0000",
-    timezone: "GMT+7",
-    music: "Pop",
-    city: "Ho Chi Minh City",
-    state: "Vietnam",
-    address: "123 Street",
-    street: "Le Loi",
-    building: "Building A",
-    zip: "700000",
-    createdAt: new Date().toISOString(),
-    password: "123456"
-};
-
-
-// kiem tra xem co phai mobile view khong
+// Kiểm tra mobile view
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
-async function addNewRecord() {
-    try {
-        const response = await fetch(`${API_URL}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(newRecord)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
-            return;
-        }
-
-        const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
-
-        allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
-    } catch (error) {
-        console.error("Lỗi kết nối API:", error);
-    }
-}
-
-// cap nhat che do hien thi theo mobile hay desktop
+// Cập nhật chế độ hiển thị
 function switchViewMode() {
     if (checkMobileView()) {
         tableSection.style.display = 'none';
@@ -84,72 +32,106 @@ function switchViewMode() {
     }
 }
 
-// load them du lieu tu API
+// -------------------- Lấy dữ liệu từ API --------------------
 async function loadMoreData() {
     if (!moreDataAvailable || loading) return;
-    loading = true;
 
-    if (offset === 0) {
+    loading = true;
+    
+    if (currentPage === 1) {
         loaderElement.style.display = "block";
     } else {
         loadMoreElement.style.display = "block";
     }
 
-    const remainingItems = 100 - allLoadedData.length;
-    const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
-
     try {
-        const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
-        const allData = await response.json();
-
-        const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
+        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsPerPage}`);
+        const dataList = await response.json();
 
         if (dataList.length === 0) {
             moreDataAvailable = false;
         } else {
             allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
-
-            offset += dataList.length;
-            nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
-            doubleNext = !doubleNext;
-
-            scrollContainer.style.display = "block";
+            allLoadedData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            displayAllItems();
+            currentPage++;
+            
+            // Hiện container sau khi load data đầu tiên
+            if (currentPage === 2) {
+                scrollContainer.style.display = "block";
+                loaderElement.style.display = "none";
+            }
         }
     } catch (error) {
         console.error(error);
-        moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
     }
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
-        loading = false;
-    } else {
+    loadMoreElement.style.display = "none";
+    loading = false;
+    
+    // Cập nhật thông báo cho cả table và card
+    if (currentPage > 2) {
+        const totalItems = allLoadedData.length;
+        
+        // Card view
+        loadMoreElement.textContent = `✅ Đã tải ${totalItems} items`;
+        loadMoreElement.style.display = "block";
+        
+        // Table view - thêm row loading
+        const loadingRow = document.createElement("tr");
+        loadingRow.id = "table-loading-row";
+        loadingRow.innerHTML = `
+            <td colspan="19" style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); color: #fff; font-weight: bold;">
+                ✅ Đã tải ${totalItems} items
+            </td>
+        `;
+        tableBodyElement.appendChild(loadingRow);
+        
         setTimeout(() => {
             loadMoreElement.style.display = "none";
-            loading = false;
-        }, 500);
+            const row = document.getElementById('table-loading-row');
+            if (row) row.remove();
+        }, 2000);
+    }
+    
+    if (!moreDataAvailable) {
+        const totalItems = allLoadedData.length;
+        
+        // Card view
+        loadMoreElement.textContent = `✅ Đã tải hết tất cả ${totalItems} items!`;
+        loadMoreElement.style.display = "block";
+        
+        // Table view
+        const loadingRow = document.createElement("tr");
+        loadingRow.id = "table-loading-row";
+        loadingRow.innerHTML = `
+            <td colspan="19" style="text-align: center; padding: 15px; background: rgba(40, 167, 69, 0.2); color: #28a745; font-weight: bold;">
+                ✅ Đã tải hết tất cả ${totalItems} items!
+            </td>
+        `;
+        tableBodyElement.appendChild(loadingRow);
+    }
+}loadMoreElement.style.display = "block";
     }
 }
 
-// them cac phan tu moi vao table va card view
-function appendNewItems(dataList) {
-    dataList.forEach(user => {
-        // Table
+// -------------------- Hiển thị tất cả items --------------------
+function displayAllItems() {
+    tableBodyElement.innerHTML = '';
+    cardViewElement.innerHTML = '';
+    
+    allLoadedData.forEach(user => {
+        // -------- Table row --------
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
-        tableRow.style.backgroundColor = user.color || "#FFFFFF";
-
+        tableRow.style.backgroundColor = user.color || "#fff";
+        
         const isGenderMale = user.genre?.toLowerCase() === 'male';
         const genderBadgeClass = isGenderMale ? 'badge-male' : 'badge-female';
         const genderLabel = isGenderMale ? 'Nam' : 'Nữ';
         const genderIconClass = isGenderMale ? 'fa-mars' : 'fa-venus';
-
+        
         tableRow.innerHTML = `
             <td>${user.id || 'N/A'}</td>
             <td><img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small" loading="lazy"></td>
@@ -177,14 +159,14 @@ function appendNewItems(dataList) {
         `;
         tableBodyElement.appendChild(tableRow);
 
-        // Card
+        // -------- Card --------
         const cardElement = document.createElement("div");
         cardElement.setAttribute("data-id", user.id);
         cardElement.className = "card";
-        cardElement.style.backgroundColor = user.color || "#FFFFFF";
-
-        const displayGender = isGenderMale ? 'Nam' : 'Nứ';
-
+        cardElement.style.backgroundColor = user.color || "#fff";
+        
+        const displayGender = isGenderMale ? 'Nam' : 'Nữ';
+        
         cardElement.innerHTML = `
             <div class="card-header">
                 <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar" loading="lazy">
@@ -220,56 +202,64 @@ function appendNewItems(dataList) {
         cardViewElement.appendChild(cardElement);
     });
 }
-function renderTable(dataList) {
-    // Xóa dữ liệu cũ
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML = "";
 
-    // Hiển thị lại toàn bộ
-    appendNewItems(dataList);
-}
-
+// -------------------- Xử lý scroll --------
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-
-    if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
-            loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
-            loadMoreData();
-        } else {
-            loadMoreElement.style.display = "none";
-        }
+    
+    if (scrollTop + clientHeight >= scrollHeight - 200 && !loading && moreDataAvailable) {
+        loadMoreData();
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  loaderElement.style.display = "block";
-
-  scrollContainer.style.display = "none";
-
-  loadMoreData();
-});
-
+// -------------------- Xử lý resize --------
 window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-if (fakeScrollBar) {
-    fakeScrollBar.addEventListener('scroll', () => {
-        scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
-    });
+// -------------------- Đồng bộ horizontal scroll --------
+function setupFakeScroll() {
+    if (!fakeScrollBar) return;
     
-    scrollContainer.addEventListener('scroll', () => {
-        if (!checkMobileView()) {
-            fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
-        }
-    });
+    const fakeScrollContent = document.getElementById('fakeScroll');
+    const dataTable = document.querySelector('.data-table');
+    
+    if (dataTable && fakeScrollContent) {
+        // Đợi table render xong rồi mới set width
+        setTimeout(() => {
+            const tableWidth = dataTable.scrollWidth + 'px';
+            fakeScrollContent.style.minWidth = tableWidth;
+            fakeScrollContent.style.width = tableWidth;
+        }, 100);
+        
+        // Scroll fake -> scroll container
+        fakeScrollBar.addEventListener('scroll', () => {
+            scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
+        });
+        
+        // Scroll container -> scroll fake
+        scrollContainer.addEventListener('scroll', () => {
+            if (!checkMobileView()) {
+                fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
+            }
+        });
+    }
 }
+
+// Gọi lại sau mỗi lần render
+function updateFakeScrollWidth() {
+    if (!checkMobileView() && fakeScrollBar) {
+        const fakeScrollContent = document.getElementById('fakeScroll');
+        const dataTable = document.querySelector('.data-table');
+        if (dataTable && fakeScrollContent) {
+            const tableWidth = dataTable.scrollWidth + 'px';
+            fakeScrollContent.style.minWidth = tableWidth;
+            fakeScrollContent.style.width = tableWidth;
+        }
+    }
+}
+
+// -------------------- Khởi tạo --------
 switchViewMode();
-addNewRecord(); 
-loadMoreData(); 
-
-
-
+setupFakeScroll();
+loadMoreData();

@@ -71,6 +71,8 @@ async function addNewRecord() {
     }
 }
 
+
+
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
     if (checkMobileView()) {
@@ -99,31 +101,31 @@ async function loadMoreData() {
     const limit = nextBatchSize > remainingItems ? remainingItems : nextBatchSize;
 
     try {
-        const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
-        const allData = await response.json();
+    const response = await fetch(`${API_URL}?page=1&limit=${allLoadedData.length + limit}&sortBy=id&order=asc`);
+    const allData = await response.json();
 
-        const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
+    const dataList = allData.slice(allLoadedData.length, allLoadedData.length + limit);
 
-        if (dataList.length === 0) {
-            moreDataAvailable = false;
-        } else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
-
-            offset += dataList.length;
-            nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
-            doubleNext = !doubleNext;
-
-            scrollContainer.style.display = "block";
-        }
-    } catch (error) {
-        console.error(error);
+    if (dataList.length === 0) {
         moreDataAvailable = false;
-    } finally {
-        loaderElement.style.display = "none"; // spinner tắt
-        loadMoreElement.style.display = "none";
-        loading = false;
+    } else {
+        allLoadedData = [...allLoadedData, ...dataList];
+        appendNewItems(dataList);
+
+        offset += dataList.length;
+        nextBatchSize = doubleNext ? itemsPerPage * 2 : itemsPerPage; 
+        doubleNext = !doubleNext;
+
+        scrollContainer.style.display = "block";
     }
+} catch (error) {
+    console.error(error);
+    moreDataAvailable = false;
+} finally {
+    loaderElement.style.display = "none"; // spinner tắt
+    loadMoreElement.style.display = "none";
+    loading = false;
+}
 
     if (!moreDataAvailable || allLoadedData.length >= 100) {
         loadMoreElement.style.display = "none";
@@ -244,13 +246,13 @@ scrollContainer.addEventListener("scroll", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-
   loaderElement.style.display = "block";
 
   scrollContainer.style.display = "none";
 
   loadMoreData();
 });
+
 
 window.addEventListener('resize', () => {
     switchViewMode();

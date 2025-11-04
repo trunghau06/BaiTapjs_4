@@ -54,22 +54,16 @@ async function addNewRecord() {
             body: JSON.stringify(newRecord)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Lỗi khi thêm record:", errorText);
-            alert("Không thể thêm record mới (API đã đủ 100 bản ghi)");
-            return;
-        }
-
         const addedData = await response.json();
-        console.log("Đã thêm record mới:", addedData);
+        console.log("Đã thêm record mới");
 
         allLoadedData.unshift(addedData);
         renderTable(allLoadedData);
     } catch (error) {
-        console.error("Lỗi kết nối API:", error);
+        console.error("Lỗi khi thêm record:", error);
     }
 }
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() {
