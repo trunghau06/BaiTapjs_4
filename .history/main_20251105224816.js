@@ -303,6 +303,7 @@ if (fakeScrollBar)
     scrollContainer.addEventListener('scroll', () => {
         if (!checkMobileView()) 
             fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
+
     });
 }
 

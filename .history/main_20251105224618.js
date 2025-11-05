@@ -255,19 +255,19 @@ function appendNewItems(dataList)
                 <div class="card-item"><i class="fa-solid fa-user card-icon"></i> <strong>Name:</strong> ${user.name                       || 'N/A'}</div>
                 <div class="card-item"><i class="fa-solid fa-venus-mars card-icon"></i> <strong>Genre:</strong> ${user.genre               || 'N/A'}</div>
                 <div class="card-item"><i class="fa-solid fa-building card-icon"></i> <strong>Company:</strong> ${user.company             || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-calendar-days card-icon"></i> <strong>DOB:</strong> ${user.dob                || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-palette card-icon"></i> <strong>Color:</strong> ${user.color                  || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-clock card-icon"></i> <strong>Timezone:</strong> ${user.timezone              || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-music card-icon"></i> <strong>Music:</strong> ${user.music                    || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-map-location-dot card-icon"></i> <strong>Address:</strong> ${user.address     || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-city card-icon"></i> <strong>City:</strong> ${user.city                       || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-map card-icon"></i> <strong>State:</strong> ${user.state                      || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-road card-icon"></i> <strong>Street:</strong> ${user.street                   || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-building-columns card-icon"></i> <strong>Building:</strong> ${user.building   || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-hashtag card-icon"></i> <strong>ZIP:</strong> ${user.zip                      || user.zipcode || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-envelope card-icon"></i> <strong>Email:</strong> ${user.email                 || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-phone card-icon"></i> <strong>Phone:</strong> ${user.phone                    || 'N/A'}</div>
-                <div class="card-item"><i class="fa-solid fa-lock card-icon"></i> <strong>Password:</strong> ${user.password               || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-calendar-days card-icon"></i> <strong>DOB:</strong> ${user.dob || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-palette card-icon"></i> <strong>Color:</strong> ${user.color || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-clock card-icon"></i> <strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-music card-icon"></i> <strong>Music:</strong> ${user.music || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-map-location-dot card-icon"></i> <strong>Address:</strong> ${user.address || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-city card-icon"></i> <strong>City:</strong> ${user.city || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-map card-icon"></i> <strong>State:</strong> ${user.state || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-road card-icon"></i> <strong>Street:</strong> ${user.street || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-building-columns card-icon"></i> <strong>Building:</strong> ${user.building || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-hashtag card-icon"></i> <strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-envelope card-icon"></i> <strong>Email:</strong> ${user.email || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-phone card-icon"></i> <strong>Phone:</strong> ${user.phone || 'N/A'}</div>
+                <div class="card-item"><i class="fa-solid fa-lock card-icon"></i> <strong>Password:</strong> ${user.password || 'N/A'}</div>
             </div>
         `;
         cardViewElement.appendChild(cardElement);
@@ -277,16 +277,14 @@ function appendNewItems(dataList)
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 
-    if (scrollTop + clientHeight >= scrollHeight - 1) 
-    {
-        if (moreDataAvailable) 
-        {
-            loadMoreElement.style.display                               = "block";
+    if (scrollTop + clientHeight >= scrollHeight - 1) {
+        if (moreDataAvailable) {
+            loadMoreElement.style.display = "block";
             loadMoreElement.querySelector('div:last-child').textContent = `...`;
             loadMoreData();
-        } 
-        else 
+        } else {
             loadMoreElement.style.display = "none";
+        }
     }
 });
 
@@ -294,15 +292,15 @@ window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-if (fakeScrollBar) 
-{
+if (fakeScrollBar) {
     fakeScrollBar.addEventListener('scroll', () => {
         scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
     });
     
     scrollContainer.addEventListener('scroll', () => {
-        if (!checkMobileView()) 
+        if (!checkMobileView()) {
             fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
+        }
     });
 }
 

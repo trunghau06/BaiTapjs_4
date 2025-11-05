@@ -279,14 +279,13 @@ scrollContainer.addEventListener("scroll", () => {
 
     if (scrollTop + clientHeight >= scrollHeight - 1) 
     {
-        if (moreDataAvailable) 
-        {
+        if (moreDataAvailable) {
             loadMoreElement.style.display                               = "block";
             loadMoreElement.querySelector('div:last-child').textContent = `...`;
             loadMoreData();
-        } 
-        else 
+        } else {
             loadMoreElement.style.display = "none";
+        }
     }
 });
 
@@ -294,15 +293,15 @@ window.addEventListener('resize', () => {
     switchViewMode();
 });
 
-if (fakeScrollBar) 
-{
+if (fakeScrollBar) {
     fakeScrollBar.addEventListener('scroll', () => {
         scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
     });
     
     scrollContainer.addEventListener('scroll', () => {
-        if (!checkMobileView()) 
+        if (!checkMobileView()) {
             fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
+        }
     });
 }
 

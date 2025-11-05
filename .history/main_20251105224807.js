@@ -295,14 +295,15 @@ window.addEventListener('resize', () => {
 });
 
 if (fakeScrollBar) 
-{
+    {
     fakeScrollBar.addEventListener('scroll', () => {
         scrollContainer.scrollLeft = fakeScrollBar.scrollLeft;
     });
     
     scrollContainer.addEventListener('scroll', () => {
-        if (!checkMobileView()) 
+        if (!checkMobileView()) {
             fakeScrollBar.scrollLeft = scrollContainer.scrollLeft;
+        }
     });
 }
 

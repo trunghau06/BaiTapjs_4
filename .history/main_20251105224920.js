@@ -44,40 +44,40 @@ function checkMobileView()
     return window.innerWidth <= 768;
 }
 
-async function deleteFirstRecord() 
-{
-  try 
-  {
-    // Lấy danh sách record, sắp xếp tăng dần theo id
-    const res  = await fetch(`${API_URL}?sortBy=id&order=asc`);
-    const data = await res.json();
+    async function deleteFirstRecord() 
+    {
+    try 
+    {
+        // Lấy danh sách record, sắp xếp tăng dần theo id
+        const res  = await fetch(`${API_URL}?sortBy=id&order=asc`);
+        const data = await res.json();
 
-    if (!data || data.length === 0) {
-      console.log("Không có record nào để xóa.");
-      return false;
+        if (!data || data.length === 0) {
+        console.log("Không có record nào để xóa.");
+        return false;
+        }
+
+        // Lấy id của record đầu tiên (nhỏ nhất)
+        const firstRecord = data[0];
+        const firstId     = firstRecord.id;
+
+        // Gửi yêu cầu DELETE
+        const deleteRes = await fetch(`${API_URL}/${firstId}`, { method: "DELETE" });
+
+        if (!deleteRes.ok) {
+        const errText = await deleteRes.text();
+        console.error("Lỗi khi xóa record:", errText);
+        return false;
+        }
+
+        return true;
+    } 
+    catch (error) 
+    {
+        console.error("Lỗi khi xóa record:", error);
+        return false;
     }
-
-    // Lấy id của record đầu tiên (nhỏ nhất)
-    const firstRecord = data[0];
-    const firstId     = firstRecord.id;
-
-    // Gửi yêu cầu DELETE
-    const deleteRes = await fetch(`${API_URL}/${firstId}`, { method: "DELETE" });
-
-    if (!deleteRes.ok) {
-      const errText = await deleteRes.text();
-      console.error("Lỗi khi xóa record:", errText);
-      return false;
     }
-
-    return true;
-  } 
-  catch (error) 
-  {
-    console.error("Lỗi khi xóa record:", error);
-    return false;
-  }
-}
 
 async function addNewRecord(record) {
     try {
