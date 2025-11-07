@@ -254,7 +254,7 @@ function appendNewItems(dataList)
         cardElement.className             = "card";
         cardElement.style.backgroundColor = user.color || "#FFFFFF";
 
-        const displayGender = isGenderMale ? 'Nam' : 'Nữ';
+        const displayGender = isGenderMale ? 'Nam' : 'N';
 
         cardElement.innerHTML = `
             <div class="card-header">
