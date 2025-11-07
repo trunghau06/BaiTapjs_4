@@ -83,6 +83,7 @@ async function addNewRecordAtStart(record)
     });
     const addedData = await response.json();
 
+    // Thêm vào đầu mảng
     allLoadedData.unshift(addedData);
 
     // Render lại table và card view
@@ -94,8 +95,7 @@ async function addNewRecordAtStart(record)
   }
 }
 
-function renderTable(data) 
-{
+function renderTable(data) {
     tableBodyElement.innerHTML = "";
     cardViewElement.innerHTML  = "";
 
@@ -128,7 +128,7 @@ async function editRecordById(id, updates) {
   }
 }
 
-editRecordById(20, { name: "Ten do Hau edit", genre: "male" });
+editRecordById(20, { name: "Phan Hoang Luan", genre: "male" });
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() 
@@ -327,7 +327,7 @@ if (fakeScrollBar)
 
 // khoi tao view va load batch dau tien
 switchViewMode();
-loadMoreData();
+loa
 
 // loadMoreData().then(() => {
 //     addNewRecordAtStart(newRecord);

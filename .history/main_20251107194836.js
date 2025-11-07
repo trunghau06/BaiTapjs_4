@@ -9,16 +9,16 @@ let doubleNext        = true;
 let offset            = 0; 
 
 const newRecord = {
-avatar   : "images/anhnen2.jpg",
+avatar   : "https://via.placeholder.com/60",
 name     : "Nguyen Trung Hau",
 company  : "BCN",
 genre    : "male",
 email    : "hau@example.com",
 phone    : "0123456789",
 dob      : "2000-01-01",
-color    : "#14f014ff",
+color    : "#ff0000",
 timezone : "GMT+7",
-music    : "Neu ngay ay",
+music    : "Neu ",
 city     : "Ho Chi Minh City",
 state    : "Vietnam",
 address  : "123 Street",
@@ -72,7 +72,7 @@ async function deleteFirstRecord()
 }
 
 
-async function addNewRecordAtStart(record) 
+async function addNewRecordAtEnd(record) 
 {
   try 
   {
@@ -83,23 +83,13 @@ async function addNewRecordAtStart(record)
     });
     const addedData = await response.json();
 
-    allLoadedData.unshift(addedData);
-
-    // Render lại table và card view
+    allLoadedData.push(addedData);
     renderTable(allLoadedData);
   } 
   catch (error) 
   {
     console.error("Lỗi khi thêm record:", error);
   }
-}
-
-function renderTable(data) 
-{
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML  = "";
-
-    appendNewItems(data);
 }
 
 async function editRecordById(id, updates) {
@@ -128,7 +118,8 @@ async function editRecordById(id, updates) {
   }
 }
 
-editRecordById(20, { name: "Ten do Hau edit", genre: "male" });
+editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() 
@@ -328,16 +319,10 @@ if (fakeScrollBar)
 // khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();
-
-// loadMoreData().then(() => {
-//     addNewRecordAtStart(newRecord);
-// });
-
 // loadMoreData().then(() => {
 //     deleteFirstRecord();
 // });
 
-
-
+// addNewRecordAtEnd(newRecord);
 
 

@@ -72,7 +72,7 @@ async function deleteFirstRecord()
 }
 
 
-async function addNewRecordAtStart(record) 
+async function addNewRecordAtEnd(record) 
 {
   try 
   {
@@ -83,23 +83,13 @@ async function addNewRecordAtStart(record)
     });
     const addedData = await response.json();
 
-    allLoadedData.unshift(addedData);
-
-    // Render lại table và card view
+    allLoadedData.push(addedData);
     renderTable(allLoadedData);
   } 
   catch (error) 
   {
     console.error("Lỗi khi thêm record:", error);
   }
-}
-
-function renderTable(data) 
-{
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML  = "";
-
-    appendNewItems(data);
 }
 
 async function editRecordById(id, updates) {
@@ -119,16 +109,13 @@ async function editRecordById(id, updates) {
 
     // Cập nhật mảng local allLoadedData
     const index = allLoadedData.findIndex(item => item.id == id);
-    if (index !== -1) {
-      allLoadedData[index] = updatedData;
-      renderTable(allLoadedData); 
-    }
   } catch (error) {
     console.error(error);
   }
 }
 
-editRecordById(20, { name: "Ten do Hau edit", genre: "male" });
+editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
+
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() 
@@ -328,16 +315,10 @@ if (fakeScrollBar)
 // khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();
-
-// loadMoreData().then(() => {
-//     addNewRecordAtStart(newRecord);
-// });
-
 // loadMoreData().then(() => {
 //     deleteFirstRecord();
 // });
 
-
-
+// addNewRecordAtEnd(newRecord);
 
 

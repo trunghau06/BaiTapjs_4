@@ -94,8 +94,7 @@ async function addNewRecordAtStart(record)
   }
 }
 
-function renderTable(data) 
-{
+function renderTable(data) {
     tableBodyElement.innerHTML = "";
     cardViewElement.innerHTML  = "";
 

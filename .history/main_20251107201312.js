@@ -83,6 +83,7 @@ async function addNewRecordAtStart(record)
     });
     const addedData = await response.json();
 
+    // Thêm vào đầu mảng
     allLoadedData.unshift(addedData);
 
     // Render lại table và card view
@@ -94,8 +95,7 @@ async function addNewRecordAtStart(record)
   }
 }
 
-function renderTable(data) 
-{
+function renderTable(data) {
     tableBodyElement.innerHTML = "";
     cardViewElement.innerHTML  = "";
 
