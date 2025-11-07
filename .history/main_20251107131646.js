@@ -9,24 +9,24 @@ let doubleNext        = true;
 let offset            = 0; 
 
 const newRecord = {
-avatar   : "https://via.placeholder.com/60",
-name     : "Nguyen Van A",
-company  : "ABC Company",
-genre    : "male",
-email    : "hau@example.com",
-phone    : "0123456789",
-dob      : "2000-01-01",
-color    : "#ff0000",
-timezone : "GMT+7",
-music    : "Pop",
-city     : "Ho Chi Minh City",
-state    : "Vietnam",
-address  : "123 Street",
-street   : "Le Loi",
-building : "Building A",
-zip      : "700000",
-createdAt: new Date().toISOString(),
-password : "123456"
+  avatar   : "https://via.placeholder.com/60",
+  name     : "Nguyen Van A",
+  company  : "ABC Company",
+  genre    : "male",
+  email    : "hau@example.com",
+  phone    : "0123456789",
+  dob      : "2000-01-01",
+  color    : "#ff0000",
+  timezone : "GMT+7",
+  music    : "Pop",
+  city     : "Ho Chi Minh City",
+  state    : "Vietnam",
+  address  : "123 Street",
+  street   : "Le Loi",
+  building : "Building A",
+  zip      : "700000",
+  createdAt: new Date().toISOString(),
+  password : "123456"
 };
 
 const tableBodyElement = document.getElementById("tableBody");
@@ -44,81 +44,72 @@ function checkMobileView()
     return window.innerWidth <= 768;
 }
 
-async function deleteFirstRecord() 
-{
-  try 
-  {
-    if (allLoadedData.length === 0) return; 
+// async function deleteFirstRecord() 
+// {
+//   try 
+//   {
+//     // Lấy danh sách record, sắp xếp tăng dần theo id
+//     const res  = await fetch(`${API_URL}?sortBy=id&order=asc`);
+//     const data = await res.json();
 
-    const firstRecord        = allLoadedData[0];
+//     if (!data || data.length === 0) {
+//       console.log("Không có record nào để xóa.");
+//       return false;
+//     }
 
-    const response           = await fetch(`${API_URL}/${firstRecord.id}`, { method: "DELETE" });
+//     // Lấy id của record đầu tiên (nhỏ nhất)
+//     const firstRecord = data[0];
+//     const firstId     = firstRecord.id;
 
-    if (response.ok) 
-    {
-        console.log(`Đã xóa record đầu tiên có id: ${firstRecord.id}`);
+//     // Gửi yêu cầu DELETE
+//     const deleteRes = await fetch(`${API_URL}/${firstId}`, { method: "DELETE" });
 
-        allLoadedData.shift();
+//     if (!deleteRes.ok) {
+//       const errText = await deleteRes.text();
+//       console.error("Lỗi khi xóa record:", errText);
+//       return false;
+//     }
 
-        renderTable(allLoadedData);
-    } 
-    else 
-        console.error(`Lỗi khi xóa id ${firstRecord.id}:`, await response.text());
-  } 
-  catch (error) 
-  {
-        console.error("Lỗi khi xóa record đầu tiên:", error);
-  }
-}
+//     return true;
+//   } 
+//   catch (error) 
+//   {
+//     console.error("Lỗi khi xóa record:", error);
+//     return false;
+//   }
+// }
 
+// async function addNewRecord(record) {
+//     try {
+//         const response = await fetch(`${API_URL}`, {
+//             method : "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body   : JSON.stringify(record)
+//         });
 
-async function addNewRecordAtEnd(record) 
-{
-  try 
-  {
-    const response = await fetch(API_URL, {
-      method : "POST",
-      headers: { "Content-Type": "application/json" },
-      body   : JSON.stringify(record)
-    });
-    const addedData = await response.json();
+//         if (!response.ok) 
+//         {
+//             const errorText = await response.text();
+//             console.error("Lỗi khi thêm record:", errorText);
+//             return;
+//         }
 
-    allLoadedData.push(addedData);
-    renderTable(allLoadedData);
-  } 
-  catch (error) 
-  {
-    console.error("Lỗi khi thêm record:", error);
-  }
-}
+//         const addedData = await response.json();
+//         console.log("Đã thêm record mới:", addedData);
 
-async function editRecordById(id, updates) {
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates)
-    });
+//         // Thêm vào đầu allLoadedData nhưng không gọi renderTable
+//         allLoadedData.unshift(addedData);
 
-    if (!response.ok) {
-      throw new Error(`Lỗi khi sửa record id ${id}: ${response.status}`);
-    }
+//         // Chỉ append record mới vào DOM
+//         appendNewItems([addedData]);
 
-    const updatedData = await response.json();
-    console.log(`Record id ${id} đã được cập nhật:`, updatedData);
-
-    // Cập nhật mảng local allLoadedData
-    const index = allLoadedData.findIndex(item => item.id == id);
-    if (index !== -1) {
-      allLoadedData[index] = updatedData;
-      renderTable(allLoadedData); 
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
+//         scrollContainer.scrollTop = 0;
+//     } 
+//     catch (error) 
+//     {
+//         console.error("Lỗi kết nối API:", error);
+//     }
+// }
 
 
 // cap nhat che do hien thi theo mobile hay desktop
@@ -319,10 +310,11 @@ if (fakeScrollBar)
 // khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();
-// loadMoreData().then(() => {
-//     deleteFirstRecord();
+// loadMoreData().then(async () => {
+//     const deleted = await deleteFirstRecord();
+//     if (deleted) {
+//         await addNewRecord(newRecord);
+//     }
 // });
-
-// addNewRecordAtEnd(newRecord);
 
 

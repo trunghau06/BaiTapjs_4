@@ -92,35 +92,6 @@ async function addNewRecordAtEnd(record)
   }
 }
 
-async function editRecordById(id, updates) {
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Lỗi khi sửa record id ${id}: ${response.status}`);
-    }
-
-    const updatedData = await response.json();
-    console.log(`Record id ${id} đã được cập nhật:`, updatedData);
-
-    // Cập nhật mảng local allLoadedData
-    const index = allLoadedData.findIndex(item => item.id == id);
-    if (index !== -1) {
-      allLoadedData[index] = updatedData;
-      renderTable(allLoadedData); 
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
-
-
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() 
 {

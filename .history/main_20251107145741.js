@@ -95,7 +95,7 @@ async function addNewRecordAtEnd(record)
 async function editRecordById(id, updates) {
   try {
     const response = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
+      method: "PUT", // hoặc "PATCH" nếu chỉ cập nhật một số field
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates)
     });
@@ -111,14 +111,14 @@ async function editRecordById(id, updates) {
     const index = allLoadedData.findIndex(item => item.id == id);
     if (index !== -1) {
       allLoadedData[index] = updatedData;
-      renderTable(allLoadedData); 
+      renderTable(allLoadedData); // cập nhật lại giao diện
     }
   } catch (error) {
     console.error(error);
   }
 }
 
-editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
+editRecordById(20, { name: "Nguyen Van Z", genre: "male" });
 
 
 // cap nhat che do hien thi theo mobile hay desktop

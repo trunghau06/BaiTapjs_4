@@ -9,24 +9,24 @@ let doubleNext        = true;
 let offset            = 0; 
 
 const newRecord = {
-avatar   : "https://via.placeholder.com/60",
-name     : "Nguyen Van A",
-company  : "ABC Company",
-genre    : "male",
-email    : "hau@example.com",
-phone    : "0123456789",
-dob      : "2000-01-01",
-color    : "#ff0000",
-timezone : "GMT+7",
-music    : "Pop",
-city     : "Ho Chi Minh City",
-state    : "Vietnam",
-address  : "123 Street",
-street   : "Le Loi",
-building : "Building A",
-zip      : "700000",
-createdAt: new Date().toISOString(),
-password : "123456"
+  avatar   : "https://via.placeholder.com/60",
+  name     : "Nguyen Van A",
+  company  : "ABC Company",
+  genre    : "male",
+  email    : "hau@example.com",
+  phone    : "0123456789",
+  dob      : "2000-01-01",
+  color    : "#ff0000",
+  timezone : "GMT+7",
+  music    : "Pop",
+  city     : "Ho Chi Minh City",
+  state    : "Vietnam",
+  address  : "123 Street",
+  street   : "Le Loi",
+  building : "Building A",
+  zip      : "700000",
+  createdAt: new Date().toISOString(),
+  password : "123456"
 };
 
 const tableBodyElement = document.getElementById("tableBody");
@@ -44,82 +44,69 @@ function checkMobileView()
     return window.innerWidth <= 768;
 }
 
-async function deleteFirstRecord() 
-{
-  try 
-  {
-    if (allLoadedData.length === 0) return; 
-
-    const firstRecord        = allLoadedData[0];
-
-    const response           = await fetch(`${API_URL}/${firstRecord.id}`, { method: "DELETE" });
-
-    if (response.ok) 
-    {
-        console.log(`Đã xóa record đầu tiên có id: ${firstRecord.id}`);
-
-        allLoadedData.shift();
-
-        renderTable(allLoadedData);
-    } 
-    else 
-        console.error(`Lỗi khi xóa id ${firstRecord.id}:`, await response.text());
-  } 
-  catch (error) 
-  {
-        console.error("Lỗi khi xóa record đầu tiên:", error);
-  }
-}
 
 
-async function addNewRecordAtEnd(record) 
-{
-  try 
-  {
-    const response = await fetch(API_URL, {
-      method : "POST",
-      headers: { "Content-Type": "application/json" },
-      body   : JSON.stringify(record)
-    });
-    const addedData = await response.json();
 
-    allLoadedData.push(addedData);
-    renderTable(allLoadedData);
-  } 
-  catch (error) 
-  {
-    console.error("Lỗi khi thêm record:", error);
-  }
-}
-
-async function editRecordById(id, updates) {
+// 🗑️ Hàm xóa record có id = 2
+async function deleteRecordById2() {
+  const idToDelete = 2; // chỉ xóa record có id = 2
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
+    console.log(`🟡 Đang xóa record có id: ${idToDelete}...`);
+    const response = await fetch(`${API_URL}/${idToDelete}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Lỗi khi xóa record id ${idToDelete}:`, errorText);
+      return;
+    }
+
+    console.log(`✅ Đã xóa record có id: ${idToDelete}`);
+
+    // ✅ Sau khi xóa, loại bỏ record đó khỏi giao diện (nếu có)
+    const rowToDelete = document.querySelector(`tr[data-id="${idToDelete}"]`);
+    if (rowToDelete) rowToDelete.remove();
+
+    const cardToDelete = document.querySelector(`.card[data-id="${idToDelete}"]`);
+    if (cardToDelete) cardToDelete.remove();
+
+  } catch (error) {
+    console.error(`⚠️ Lỗi khi xóa record id ${idToDelete}:`, error);
+  }
+}
+
+// 👉 Gọi hàm xóa record có id = 2
+deleteRecordById2();
+
+async function addNewRecord(idValue) {
+  try {
+    // Dữ liệu mẫu cần thêm
+    const newRecord = {
+      id: idValue, // ép id theo ý mình (1 hoặc 2)
+      name: `User ${idValue}`,
+      createdAt: new Date().toISOString()
+    };
+
+    const response = await fetch(API_URL, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(newRecord)
     });
 
     if (!response.ok) {
-      throw new Error(`Lỗi khi sửa record id ${id}: ${response.status}`);
+      const errText = await response.text();
+      console.error(`❌ Lỗi khi thêm record id ${idValue}:`, errText);
+      return;
     }
 
-    const updatedData = await response.json();
-    console.log(`Record id ${id} đã được cập nhật:`, updatedData);
-
-    // Cập nhật mảng local allLoadedData
-    const index = allLoadedData.findIndex(item => item.id == id);
-    if (index !== -1) {
-      allLoadedData[index] = updatedData;
-      renderTable(allLoadedData); 
-    }
+    const result = await response.json();
+    console.log("✅ Đã thêm record mới:", result);
   } catch (error) {
-    console.error(error);
+    console.error("⚠️ Lỗi khi thêm record:", error);
   }
 }
 
-editRecordById(20, { name: "Nguyen Trung Hau", genre: "male" });
-
+addNewRecord(1);
+addNewRecord
 
 // cap nhat che do hien thi theo mobile hay desktop
 function switchViewMode() 
@@ -319,10 +306,11 @@ if (fakeScrollBar)
 // khoi tao view va load batch dau tien
 switchViewMode();
 loadMoreData();
-// loadMoreData().then(() => {
-//     deleteFirstRecord();
+// loadMoreData().then(async () => {
+//     const deleted = await deleteFirstRecord();
+//     if (deleted) {
+//         await addNewRecord(newRecord);
+//     }
 // });
-
-// addNewRecordAtEnd(newRecord);
 
 
