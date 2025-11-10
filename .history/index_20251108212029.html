@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Virtual Dynamic View</title> 
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Virtual Dynamic View</h1> 
+            <p>Hiển Thị Thông Tin</p>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">Đang tải dữ liệu...</div>
+        </div>
+
+        <div class="fake-scroll-wrapper">
+            <div class="fake-scroll" id="fakeScroll"></div>
+        </div>
+
+        <div id="cardsContainer" class="cards-container" style="display: none;">
+            <div id="cardsSpacer" class="cards-spacer">
+                <div id="cardsContent" class="cards-content"> 
+                    <div id="tableView" class="view-wrapper">
+                         <table class="data-table">
+                            <thead>
+                                <tr class="header-row">
+                                    <th>ID</th>
+                                    <th>Avatar</th>
+                                    <th>Name</th>
+                                    <th>Company</th>
+                                    <th>Genre</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>DOB</th>
+                                    <th>Color</th>
+                                    <th>Timezone</th>
+                                    <th>Music</th>
+                                    <th>City</th>
+                                    <th>State</th>
+                                    <th>Address</th>
+                                    <th>Street</th>
+                                    <th>Building</th>
+                                    <th>ZIP</th>
+                                    <th>CreatedAt</th>
+                                    <th>Password</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"> 
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="cardView" class="view-wrapper card-list-grid"> </div>
+
+                     <div id="loadingMore" class="loading-more" style="display: none;">
+                        <div>Đang tải thêm...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
