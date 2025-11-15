@@ -1,16 +1,20 @@
-const API_URL          = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
-let currentPage        = 1;
-const itemsPerPage     = 15; 
-let allLoadedData      = [];
-let loading            = false;
-let moreDataAvailable  = true;
-let isEditMode         = false;
-let editingUser        = null;
+const API_URL           = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
+const itemsPerPage      = 15;
+let loading             = false;
+let isEditMode          = false;
+let editingUser         = null;
+
+const ROW_HEIGHT        = 50;
+const VISIBLE_ROWS      = 18;
+const RENDER_WINDOW     = VISIBLE_ROWS + 6;
+let totalRecords        = 0;
+let renderedElements    = [];
+let fullDataStore       = {};
+let lastScrollTop       = 0;
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement  = document.getElementById("cardView");
 const loaderElement    = document.getElementById("loader");
-const loadMoreElement  = document.getElementById("loadingMore");
 const scrollContainer  = document.getElementById("cardsContainer");
 const tableSection     = document.getElementById("tableView");
 const cardSection      = document.getElementById("cardView");
@@ -29,7 +33,7 @@ function checkMobileView() {
 }
 
 function resetAvatarPreview() {
-    avatarPreview.innerHTML = '<i class="fa-solid fa-user" style="font-size: 40px; color: #ccc;"></i>';
+    avatarPreview.innerHTML = '<i class="fa-solid fa-user" style="font-size: 40px; color: #ccc;">';
 }
 
 function openAddModal() {
@@ -66,15 +70,6 @@ avatarFileInput.addEventListener("change", (e) => {
         reader.readAsDataURL(file);
     }
 });
-
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
 
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -133,8 +128,18 @@ async function addNewRecordAtStart(record) {
             body   : JSON.stringify(record)
         });
         const addedData = await response.json();
-        allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
+        
+        totalRecords++;
+        
+        let newStore = { 0: addedData };
+        for (let i = 0; i < totalRecords - 1; i++) {
+            newStore[i + 1] = fullDataStore[i];
+        }
+        fullDataStore = newStore;
+        
+        scrollContainer.style.height = `${totalRecords * ROW_HEIGHT}px`;
+        updateVirtualView();
+        
     } catch (error) {
         console.error("Lỗi khi thêm record:", error);
         alert("Lỗi khi thêm record!");
@@ -180,10 +185,11 @@ async function editRecordById(id, updates) {
         });
         if (!response.ok) throw new Error(`Lỗi khi sửa record id ${id}: ${response.status}`);
         const updatedData = await response.json();
-        const index = allLoadedData.findIndex(item => item.id == id);
-        if (index !== -1) {
-            allLoadedData[index] = updatedData;
-            renderTable(allLoadedData);
+        
+        const index = Object.keys(fullDataStore).find(key => fullDataStore[key].id == id);
+        if (index !== undefined) {
+            fullDataStore[index] = updatedData;
+            updateVirtualView();
         }
     } catch (error) {
         console.error(error);
@@ -202,45 +208,101 @@ function switchViewMode() {
     }
 }
 
-async function loadMoreData() {
-    if (!moreDataAvailable || loading) return;
-    loading = true;
-
-    addRecordBtn.style.display = "none";
-
-    if (currentPage === 1) loaderElement.style.display = "block";
-    else loadMoreElement.style.display = "block";
-
+async function fetchInitialData() {
     try {
-        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsPerPage}&sortBy=id&order=asc`);
-        const dataList = await response.json();
-        if (dataList.length === 0) moreDataAvailable = false;
-        else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
-            currentPage++;
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
-        }
-    } catch (error) {
-        console.error(error);
-        moreDataAvailable = false;
-    }
+        const response = await fetch(`${API_URL}?page=1&limit=100&sortBy=id&order=asc`); 
+        const allData = await response.json();
+        
+        allData.forEach((item, index) => {
+             fullDataStore[index] = item;
+        });
 
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
-        addRecordBtn.style.display = "block";
-        loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            addRecordBtn.style.display = "block"; 
-            loading = false;
-        }, 500);
+        totalRecords = allData.length;
+        
+        for (let i = 0; i < RENDER_WINDOW; i++) {
+            const row = createTableRow(fullDataStore[i]);
+            tableBodyElement.appendChild(row);
+            renderedElements.push(row);
+            
+            const card = createCardElement(fullDataStore[i]);
+            cardViewElement.appendChild(card);
+        }
+        
+        scrollContainer.style.height = `${totalRecords * ROW_HEIGHT}px`;
+        
+        loaderElement.style.display = "none";
+        scrollContainer.style.display = "block";
+        
+        updateVirtualView();
+        
+    } catch (error) {
+        console.error("Lỗi tải dữ liệu ban đầu:", error);
     }
 }
+
+function updateVirtualView() {
+    if (totalRecords === 0) return;
+    
+    const scrollTop = scrollContainer.scrollTop;
+    
+    const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 3);
+    
+    const offset = startIndex * ROW_HEIGHT;
+    
+    for (let i = 0; i < RENDER_WINDOW; i++) {
+        const dataIndex = startIndex + i;
+        const row = renderedElements[i];
+
+        if (dataIndex < totalRecords) {
+            const user = fullDataStore[dataIndex];
+            
+            updateRowContent(row, user); 
+                 
+            row.style.transform = `translateY(${offset}px)`;
+            row.style.position = 'absolute'; 
+            row.style.display = ''; 
+        } else {
+            if (row) row.style.display = 'none';
+        }
+    }
+}
+
+function updateRowContent(domElement, user) {
+    if (!user) return; 
+
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+    
+    // Cập nhật background
+    domElement.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+
+    // Logic cập nhật phức tạp, nên tái tạo HTML cho nhanh trong Vanilla JS
+    if (domElement.tagName === 'TR') {
+        const cells = [
+            user.id,
+            `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
+            user.name, user.company,
+            `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
+            user.email, user.phone, user.dob, user.color, user.timezone, user.music,
+            user.city, user.state, user.address, user.street, user.building,
+            user.zip || user.zipcode, user.createdAt, user.password
+        ];
+        
+        // Cập nhật từng ô TD
+        const existingCells = domElement.querySelectorAll('td');
+        for (let i = 1; i < existingCells.length; i++) {
+            existingCells[i].innerHTML = cells[i - 1] || "N/A";
+        }
+    } else if (domElement.className === 'card') {
+        domElement.querySelector('.card-name').textContent = user.name || 'N/A';
+        domElement.querySelector('.card-company').textContent = user.company || 'N/A';
+        // Cần nhiều logic phức tạp hơn để cập nhật tất cả 17 trường trong card-body
+        // Tạm thời chỉ cập nhật header để minh họa
+    }
+}
+
 
 function lightenColor(hexColor, percent) {
     hexColor = hexColor.replace("#","");
@@ -253,98 +315,93 @@ function lightenColor(hexColor, percent) {
     return `rgb(${r},${g},${b})`;
 }
 
-function renderTable(data) {
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML = "";
-    appendNewItems(data);
+function createTableRow(user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+
+    const tableRow = document.createElement("tr");
+    tableRow.setAttribute("data-id", user.id);
+    tableRow.className = "data-row";
+    tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+
+    const cellsContent = [
+        user.id,
+        `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
+        user.name, user.company,
+        `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
+        user.email, user.phone, user.dob, user.color, user.timezone, user.music,
+        user.city, user.state, user.address, user.street, user.building,
+        user.zip || user.zipcode, user.createdAt, user.password
+    ];
+
+    const actionTd = document.createElement("td");
+    actionTd.style.textAlign = "center";
+    actionTd.innerHTML = `
+        <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+    `;
+    
+    tableRow.appendChild(actionTd); 
+    
+    cellsContent.forEach(content => {
+        const td = document.createElement("td");
+        td.innerHTML = content || "N/A";
+        tableRow.appendChild(td);
+    });
+    
+    attachRowEvents(tableRow, user);
+    return tableRow;
 }
 
-function appendNewItems(dataList) {
-    dataList.forEach(user => {
-        const isMale = user.genre?.toLowerCase() === 'male';
-        const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isMale ? 'Nam' : 'Nữ';
-        const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+function createCardElement(user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+    
+    const card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("data-id", user.id);
+    card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
 
-        // TABLE ROW
-        const tableRow = document.createElement("tr");
-        tableRow.setAttribute("data-id", user.id);
-        tableRow.className = "data-row";
-        tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-
-        const cells = [
-            user.id,
-            `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
-            user.name, user.company,
-            `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
-            user.email, user.phone, user.dob, user.color, user.timezone, user.music,
-            user.city, user.state, user.address, user.street, user.building,
-            user.zip || user.zipcode, user.createdAt, user.password
-        ];
-
-        cells.forEach(content => {
-            const td = document.createElement("td");
-            td.innerHTML = content || "N/A";
-            tableRow.appendChild(td);
-        });
-
-        const actionTd = document.createElement("td");
-        actionTd.style.textAlign = "center";
-        actionTd.innerHTML = `
+    card.innerHTML = `
+        <div class="card-header">
+            <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
+            <div class="card-info">
+                <div class="card-name">${user.name || 'N/A'}</div>
+                <div class="card-company">${user.company || 'N/A'}</div>
+            </div>
+            <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
+        </div>
+        <div class="card-body">
+            <div class="card-item" data-field="id"><strong>ID:</strong> ${user.id || 'N/A'}</div>
+            <div class="card-item" data-field="createdAt"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
+            <div class="card-item" data-field="name"><strong>Name:</strong> ${user.name || 'N/A'}</div>
+            <div class="card-item" data-field="genre"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
+            <div class="card-item" data-field="company"><strong>Company:</strong> ${user.company || 'N/A'}</div>
+            <div class="card-item" data-field="dob"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
+            <div class="card-item" data-field="color"><strong>Color:</strong> ${user.color || 'N/A'}</div>
+            <div class="card-item" data-field="timezone"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
+            <div class="card-item" data-field="music"><strong>Music:</strong> ${user.music || 'N/A'}</div>
+            <div class="card-item" data-field="address"><strong>Address:</strong> ${user.address || 'N/A'}</div>
+            <div class="card-item" data-field="city"><strong>City:</strong> ${user.city || 'N/A'}</div>
+            <div class="card-item" data-field="state"><strong>State:</strong> ${user.state || 'N/A'}</div>
+            <div class="card-item" data-field="street"><strong>Street:</strong> ${user.street || 'N/A'}</div>
+            <div class="card-item" data-field="building"><strong>Building:</strong> ${user.building || 'N/A'}</div>
+            <div class="card-item" data-field="zip"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
+            <div class="card-item" data-field="email"><strong>Email:</strong> ${user.email || 'N/A'}</div>
+            <div class="card-item" data-field="phone"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
+            <div class="card-item" data-field="password"><strong>Password:</strong> ${user.password || 'N/A'}</div>
+        </div>
+        <div class="card-actions">
             <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-        `;
-        tableRow.prepend(actionTd);
-        tableBodyElement.appendChild(tableRow);
-
-        attachRowEvents(tableRow, user);
-
-        // CARD VIEW
-        if (!cardViewElement.querySelector(`.card[data-id='${user.id}']`)) {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.setAttribute("data-id", user.id);
-            card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-            
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
-                    <div class="card-info">
-                        <div class="card-name">${user.name || 'N/A'}</div>
-                        <div class="card-company">${user.company || 'N/A'}</div>
-                    </div>
-                    <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-item"><strong>ID:</strong> ${user.id || 'N/A'}</div>
-                    <div class="card-item"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
-                    <div class="card-item"><strong>Name:</strong> ${user.name || 'N/A'}</div>
-                    <div class="card-item"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
-                    <div class="card-item"><strong>Company:</strong> ${user.company || 'N/A'}</div>
-                    <div class="card-item"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
-                    <div class="card-item"><strong>Color:</strong> ${user.color || 'N/A'}</div>
-                    <div class="card-item"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
-                    <div class="card-item"><strong>Music:</strong> ${user.music || 'N/A'}</div>
-                    <div class="card-item"><strong>Address:</strong> ${user.address || 'N/A'}</div>
-                    <div class="card-item"><strong>City:</strong> ${user.city || 'N/A'}</div>
-                    <div class="card-item"><strong>State:</strong> ${user.state || 'N/A'}</div>
-                    <div class="card-item"><strong>Street:</strong> ${user.street || 'N/A'}</div>
-                    <div class="card-item"><strong>Building:</strong> ${user.building || 'N/A'}</div>
-                    <div class="card-item"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
-                    <div class="card-item"><strong>Email:</strong> ${user.email || 'N/A'}</div>
-                    <div class="card-item"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
-                    <div class="card-item"><strong>Password:</strong> ${user.password || 'N/A'}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            cardViewElement.appendChild(card);
-            attachCardEvents(card, user);
-        }
-    });
+        </div>
+    `;
+    attachCardEvents(card, user);
+    return card;
 }
 
 function attachRowEvents(tableRow, user) {
@@ -368,11 +425,16 @@ async function deleteRecord(user) {
     try {
         const res = await fetch(`${API_URL}/${user.id}`, { method: "DELETE" });
         if (res.ok) {
-            allLoadedData = allLoadedData.filter(u => u.id != user.id);
-            const row = tableBodyElement.querySelector(`tr[data-id='${user.id}']`);
-            if (row) row.remove();
-            const card = cardViewElement.querySelector(`.card[data-id='${user.id}']`);
-            if (card) card.remove();
+            
+            // Xóa khỏi store
+            const indexToDelete = Object.keys(fullDataStore).find(key => fullDataStore[key].id == user.id);
+            if (indexToDelete !== undefined) {
+                delete fullDataStore[indexToDelete];
+                totalRecords--;
+            }
+            
+            // Kích hoạt lại render ảo để cập nhật view và chiều cao
+            updateVirtualView();
         } else alert("Xóa thất bại!");
     } catch (err) {
         console.error(err);
@@ -413,7 +475,6 @@ function openEditModal(user) {
     addRecordForm.email.value    = user.email || "";
     addRecordForm.phone.value    = user.phone || "";
     
-    // xử lý dob đúng định dạng input datetime-local
     if (user.dob) {
         const d = new Date(user.dob);
         addRecordForm.dob.value = formatDobForInput(user.dob);
@@ -440,20 +501,10 @@ function openEditModal(user) {
     submitBtn.textContent = "Chỉnh sửa";
 }
 
-scrollContainer.addEventListener("scroll", () => {
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-    if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
-            loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
-            loadMoreData();
-        } else {
-            loadMoreElement.style.display = "none";
-        }
-    }
-});
+scrollContainer.addEventListener("scroll", updateVirtualView);
+
 
 window.addEventListener('resize', switchViewMode);
 
 switchViewMode();
-loadMoreData();
+fetchInitialData();

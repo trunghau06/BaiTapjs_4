@@ -24,10 +24,27 @@ const avatarFileInput  = document.getElementById("avatarFile");
 const avatarPreview    = document.getElementById("avatarPreview");
 const submitBtn        = addRecordForm.querySelector(".btn-submit");
 
+// =================== Responsive View ===================
 function checkMobileView() {
     return window.innerWidth <= 768;
 }
 
+function switchViewMode() {
+    if (checkMobileView()) {
+        tableSection.style.display = 'none';
+        cardSection.style.display  = 'flex';
+        if (fakeScrollBar) fakeScrollBar.style.display = 'none';
+    } else {
+        tableSection.style.display = 'block';
+        cardSection.style.display  = 'none';
+        if (fakeScrollBar) fakeScrollBar.style.display = 'block';
+    }
+}
+
+window.addEventListener('resize', switchViewMode);
+switchViewMode();
+
+// =================== Modal & Avatar ===================
 function resetAvatarPreview() {
     avatarPreview.innerHTML = '<i class="fa-solid fa-user" style="font-size: 40px; color: #ccc;"></i>';
 }
@@ -67,15 +84,7 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
+// =================== Add/Edit ===================
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
@@ -134,7 +143,7 @@ async function addNewRecordAtStart(record) {
         });
         const addedData = await response.json();
         allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
+        renderVisibleItems();
     } catch (error) {
         console.error("Lỗi khi thêm record:", error);
         alert("Lỗi khi thêm record!");
@@ -183,65 +192,89 @@ async function editRecordById(id, updates) {
         const index = allLoadedData.findIndex(item => item.id == id);
         if (index !== -1) {
             allLoadedData[index] = updatedData;
-            renderTable(allLoadedData);
+            renderVisibleItems();
         }
     } catch (error) {
         console.error(error);
     }
 }
 
-function switchViewMode() {
-    if (checkMobileView()) {
-        tableSection.style.display = 'none';
-        cardSection.style.display  = 'flex';
-        if (fakeScrollBar) fakeScrollBar.style.display = 'none';
-    } else {
-        tableSection.style.display = 'block';
-        cardSection.style.display  = 'none';
-        if (fakeScrollBar) fakeScrollBar.style.display = 'block';
-    }
-}
-
-async function loadMoreData() {
-    if (!moreDataAvailable || loading) return;
-    loading = true;
-
-    addRecordBtn.style.display = "none";
-
-    if (currentPage === 1) loaderElement.style.display = "block";
-    else loadMoreElement.style.display = "block";
-
+// =================== Delete ===================
+async function deleteRecord(user) {
+    if (!confirm(`Bạn chắc chắn muốn xóa record id ${user.id}?`)) return;
     try {
-        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsPerPage}&sortBy=id&order=asc`);
-        const dataList = await response.json();
-        if (dataList.length === 0) moreDataAvailable = false;
-        else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
-            currentPage++;
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
-        }
-    } catch (error) {
-        console.error(error);
-        moreDataAvailable = false;
-    }
-
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
-        addRecordBtn.style.display = "block";
-        loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            addRecordBtn.style.display = "block"; 
-            loading = false;
-        }, 500);
+        const res = await fetch(`${API_URL}/${user.id}`, { method: "DELETE" });
+        if (res.ok) {
+            allLoadedData = allLoadedData.filter(u => u.id != user.id);
+            const row = tableBodyElement.querySelector(`tr[data-id='${user.id}']`);
+            if (row) row.remove();
+            const card = cardViewElement.querySelector(`.card[data-id='${user.id}']`);
+            if (card) card.remove();
+        } else alert("Xóa thất bại!");
+    } catch (err) {
+        console.error(err);
+        alert("Lỗi khi xóa record!");
     }
 }
 
+// =================== Format DOB ===================
+function formatDobForInput(dobString) {
+    if (!dobString) return "";
+    
+    let date = new Date(dobString);
+
+    if (isNaN(date.getTime())) {
+        const parts = dobString.split('-');
+        if (parts.length === 3) {
+            date = new Date(parts[0], parts[1]-1, parts[2]);
+        } else return "";
+    }
+
+    const year    = date.getFullYear();
+    const month   = String(date.getMonth() + 1).padStart(2, '0');
+    const day     = String(date.getDate()).padStart(2, '0');
+    const hours   = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// =================== Open Edit ===================
+function openEditModal(user) {
+    isEditMode  = true;
+    editingUser = user;
+    addRecordModal.style.display = "flex";
+
+    addRecordForm.name.value     = user.name || "";
+    addRecordForm.company.value  = user.company || "";
+    addRecordForm.genre.value    = user.genre || "";
+    addRecordForm.email.value    = user.email || "";
+    addRecordForm.phone.value    = user.phone || "";
+    
+    if (user.dob) {
+        addRecordForm.dob.value = formatDobForInput(user.dob);
+    } else addRecordForm.dob.value = "";
+
+    addRecordForm.color.value    = user.color || "#ffffff";
+    addRecordForm.timezone.value = user.timezone || "";
+    addRecordForm.music.value    = user.music || "";
+    addRecordForm.city.value     = user.city || "";
+    addRecordForm.state.value    = user.state || "";
+    addRecordForm.address.value  = user.address || "";
+    addRecordForm.street.value   = user.street || "";
+    addRecordForm.building.value = user.building || "";
+    addRecordForm.zip.value      = user.zip || user.zipcode || "";
+    addRecordForm.password.value = user.password || "";
+
+    avatarPreview.innerHTML = user.avatar
+        ? `<img src="${user.avatar}" alt="Preview">`
+        : '<i class="fa-solid fa-user" style="font-size: 40px; color: #ccc;"></i>';
+
+    addRecordModal.querySelector("h2").textContent = "Chỉnh Sửa Record";
+    submitBtn.textContent = "Chỉnh sửa";
+}
+
+// =================== Table/Card Render ===================
 function lightenColor(hexColor, percent) {
     hexColor = hexColor.replace("#","");
     let r = parseInt(hexColor.substring(0,2),16);
@@ -266,7 +299,7 @@ function appendNewItems(dataList) {
         const genderLabel = isMale ? 'Nam' : 'Nữ';
         const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
 
-        // TABLE ROW
+        // Table Row
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
@@ -299,13 +332,12 @@ function appendNewItems(dataList) {
 
         attachRowEvents(tableRow, user);
 
-        // CARD VIEW
+        // Card View
         if (!cardViewElement.querySelector(`.card[data-id='${user.id}']`)) {
             const card = document.createElement("div");
             card.className = "card";
             card.setAttribute("data-id", user.id);
             card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-            
 
             card.innerHTML = `
                 <div class="card-header">
@@ -350,7 +382,6 @@ function appendNewItems(dataList) {
 function attachRowEvents(tableRow, user) {
     const editIcon = tableRow.querySelector(".edit-icon");
     const deleteIcon = tableRow.querySelector(".delete-icon");
-
     editIcon.addEventListener("click", () => openEditModal(user));
     deleteIcon.addEventListener("click", async () => await deleteRecord(user));
 }
@@ -358,94 +389,16 @@ function attachRowEvents(tableRow, user) {
 function attachCardEvents(cardElement, user) {
     const editIcon = cardElement.querySelector(".edit-icon");
     const deleteIcon = cardElement.querySelector(".delete-icon");
-
     editIcon.addEventListener("click", () => openEditModal(user));
     deleteIcon.addEventListener("click", async () => await deleteRecord(user));
 }
 
-async function deleteRecord(user) {
-    if (!confirm(`Bạn chắc chắn muốn xóa record id ${user.id}?`)) return;
-    try {
-        const res = await fetch(`${API_URL}/${user.id}`, { method: "DELETE" });
-        if (res.ok) {
-            allLoadedData = allLoadedData.filter(u => u.id != user.id);
-            const row = tableBodyElement.querySelector(`tr[data-id='${user.id}']`);
-            if (row) row.remove();
-            const card = cardViewElement.querySelector(`.card[data-id='${user.id}']`);
-            if (card) card.remove();
-        } else alert("Xóa thất bại!");
-    } catch (err) {
-        console.error(err);
-        alert("Lỗi khi xóa record!");
-    }
-}
-
-function formatDobForInput(dobString) {
-    if (!dobString) return "";
-    
-    let date = new Date(dobString);
-
-    if (isNaN(date.getTime())) {
-        const parts = dobString.split('-');
-        if (parts.length === 3) {
-            date = new Date(parts[0], parts[1]-1, parts[2]);
-        } else return "";
-    }
-
-    const year    = date.getFullYear();
-    const month   = String(date.getMonth() + 1).padStart(2, '0');
-    const day     = String(date.getDate()).padStart(2, '0');
-    const hours   = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-
-function openEditModal(user) {
-    isEditMode  = true;
-    editingUser = user;
-    addRecordModal.style.display = "flex";
-
-    addRecordForm.name.value     = user.name || "";
-    addRecordForm.company.value  = user.company || "";
-    addRecordForm.genre.value    = user.genre || "";
-    addRecordForm.email.value    = user.email || "";
-    addRecordForm.phone.value    = user.phone || "";
-    
-    // xử lý dob đúng định dạng input datetime-local
-    if (user.dob) {
-        const d = new Date(user.dob);
-        addRecordForm.dob.value = formatDobForInput(user.dob);
-    } else addRecordForm.dob.value = "";
-
-    addRecordForm.color.value    = user.color || "#ffffff";
-    addRecordForm.timezone.value = user.timezone || "";
-    addRecordForm.music.value    = user.music || "";
-    addRecordForm.city.value     = user.city || "";
-    addRecordForm.state.value    = user.state || "";
-    addRecordForm.address.value  = user.address || "";
-    addRecordForm.street.value   = user.street || "";
-    addRecordForm.building.value = user.building || "";
-
-    addRecordForm.zip.value      = user.zip || user.zipcode || "";
-
-    addRecordForm.password.value = user.password || "";
-
-    avatarPreview.innerHTML = user.avatar
-        ? `<img src="${user.avatar}" alt="Preview">`
-        : '<i class="fa-solid fa-user" style="font-size: 40px; color: #ccc;"></i>';
-
-    addRecordModal.querySelector("h2").textContent = "Chỉnh Sửa Record";
-    submitBtn.textContent = "Chỉnh sửa";
-}
-
+// =================== Scroll load ===================
 scrollContainer.addEventListener("scroll", () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
     if (scrollTop + clientHeight >= scrollHeight - 1) {
         if (moreDataAvailable) {
             loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
             loadMoreData();
         } else {
             loadMoreElement.style.display = "none";
@@ -453,7 +406,5 @@ scrollContainer.addEventListener("scroll", () => {
     }
 });
 
-window.addEventListener('resize', switchViewMode);
-
-switchViewMode();
+// =================== Init Load ===================
 loadMoreData();

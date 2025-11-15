@@ -1,16 +1,16 @@
-const API_URL          = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
-let currentPage        = 1;
-const itemsPerPage     = 15; 
-let allLoadedData      = [];
-let loading            = false;
-let moreDataAvailable  = true;
-let isEditMode         = false;
-let editingUser        = null;
+const API_URL           = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
+let currentPage         = 1;
+const itemsPerPage      = 15; 
+let allLoadedData       = [];
+let loading             = false;
+let moreDataAvailable   = true; 
+let isEditMode          = false;
+let editingUser         = null;
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement  = document.getElementById("cardView");
 const loaderElement    = document.getElementById("loader");
-const loadMoreElement  = document.getElementById("loadingMore");
+const loadMoreElement  = document.getElementById("loadingMore"); 
 const scrollContainer  = document.getElementById("cardsContainer");
 const tableSection     = document.getElementById("tableView");
 const cardSection      = document.getElementById("cardView");
@@ -23,6 +23,29 @@ const cancelBtn        = document.getElementById("cancelBtn");
 const avatarFileInput  = document.getElementById("avatarFile");
 const avatarPreview    = document.getElementById("avatarPreview");
 const submitBtn        = addRecordForm.querySelector(".btn-submit");
+
+function initializeFixedRows() {
+    for (let i = 0; i < itemsPerPage; i++) {
+        const tableRow = document.createElement("tr");
+        tableRow.className = "data-row";
+        
+        const actionTd = document.createElement("td");
+        actionTd.style.textAlign = "center";
+        actionTd.innerHTML = `
+            <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+        `;
+        tableRow.appendChild(actionTd);
+        for (let j = 0; j < 21; j++) { 
+            tableRow.appendChild(document.createElement("td"));
+        }
+        tableBodyElement.appendChild(tableRow);
+        
+        const card = document.createElement("div");
+        card.className = "card";
+        cardViewElement.appendChild(card);
+    }
+}
 
 function checkMobileView() {
     return window.innerWidth <= 768;
@@ -66,15 +89,6 @@ avatarFileInput.addEventListener("change", (e) => {
         reader.readAsDataURL(file);
     }
 });
-
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
 
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -133,8 +147,11 @@ async function addNewRecordAtStart(record) {
             body   : JSON.stringify(record)
         });
         const addedData = await response.json();
+        
         allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
+        allLoadedData = allLoadedData.slice(0, itemsPerPage);
+
+        renderView(allLoadedData);
     } catch (error) {
         console.error("Lỗi khi thêm record:", error);
         alert("Lỗi khi thêm record!");
@@ -183,7 +200,7 @@ async function editRecordById(id, updates) {
         const index = allLoadedData.findIndex(item => item.id == id);
         if (index !== -1) {
             allLoadedData[index] = updatedData;
-            renderTable(allLoadedData);
+            renderView(allLoadedData);
         }
     } catch (error) {
         console.error(error);
@@ -202,43 +219,27 @@ function switchViewMode() {
     }
 }
 
-async function loadMoreData() {
-    if (!moreDataAvailable || loading) return;
+async function loadInitialData() {
+    if (loading) return;
     loading = true;
 
-    addRecordBtn.style.display = "none";
-
-    if (currentPage === 1) loaderElement.style.display = "block";
-    else loadMoreElement.style.display = "block";
+    loaderElement.style.display = "block";
 
     try {
-        const response = await fetch(`${API_URL}?page=${currentPage}&limit=${itemsPerPage}&sortBy=id&order=asc`);
+        const response = await fetch(`${API_URL}?page=1&limit=${itemsPerPage}&sortBy=id&order=asc`);
         const dataList = await response.json();
-        if (dataList.length === 0) moreDataAvailable = false;
-        else {
-            allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
-            currentPage++;
-            if (currentPage === 2) {
-                scrollContainer.style.display = "block";
-                loaderElement.style.display = "none";
-            }
-        }
-    } catch (error) {
-        console.error(error);
-        moreDataAvailable = false;
-    }
-
-    if (!moreDataAvailable || allLoadedData.length >= 100) {
-        loadMoreElement.style.display = "none";
-        addRecordBtn.style.display = "block";
+        
+        console.log(`Page 1 loaded:`, dataList.length, "records");
+        
+        allLoadedData = dataList;
+        renderView(allLoadedData); 
+        
+    } catch (err) {
+        console.error("Load error:", err);
+    } finally {
+        loaderElement.style.display = "none";
         loading = false;
-    } else {
-        setTimeout(() => {
-            loadMoreElement.style.display = "none";
-            addRecordBtn.style.display = "block"; 
-            loading = false;
-        }, 500);
+        document.getElementById("cardsContainer").style.display = "block";
     }
 }
 
@@ -253,106 +254,112 @@ function lightenColor(hexColor, percent) {
     return `rgb(${r},${g},${b})`;
 }
 
-function renderTable(data) {
-    tableBodyElement.innerHTML = "";
-    cardViewElement.innerHTML = "";
-    appendNewItems(data);
-}
+function renderView(dataList) {
+    const existingRows = tableBodyElement.querySelectorAll("tr.data-row");
+    const existingCards = cardViewElement.querySelectorAll(".card");
 
-function appendNewItems(dataList) {
-    dataList.forEach(user => {
-        const isMale = user.genre?.toLowerCase() === 'male';
-        const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isMale ? 'Nam' : 'Nữ';
-        const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
-
-        // TABLE ROW
-        const tableRow = document.createElement("tr");
-        tableRow.setAttribute("data-id", user.id);
-        tableRow.className = "data-row";
-        tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-
-        const cells = [
-            user.id,
-            `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
-            user.name, user.company,
-            `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
-            user.email, user.phone, user.dob, user.color, user.timezone, user.music,
-            user.city, user.state, user.address, user.street, user.building,
-            user.zip || user.zipcode, user.createdAt, user.password
-        ];
-
-        cells.forEach(content => {
-            const td = document.createElement("td");
-            td.innerHTML = content || "N/A";
-            tableRow.appendChild(td);
-        });
-
-        const actionTd = document.createElement("td");
-        actionTd.style.textAlign = "center";
-        actionTd.innerHTML = `
-            <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-        `;
-        tableRow.prepend(actionTd);
-        tableBodyElement.appendChild(tableRow);
-
-        attachRowEvents(tableRow, user);
-
-        // CARD VIEW
-        if (!cardViewElement.querySelector(`.card[data-id='${user.id}']`)) {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.setAttribute("data-id", user.id);
-            card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-            
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
-                    <div class="card-info">
-                        <div class="card-name">${user.name || 'N/A'}</div>
-                        <div class="card-company">${user.company || 'N/A'}</div>
-                    </div>
-                    <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-item"><strong>ID:</strong> ${user.id || 'N/A'}</div>
-                    <div class="card-item"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
-                    <div class="card-item"><strong>Name:</strong> ${user.name || 'N/A'}</div>
-                    <div class="card-item"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
-                    <div class="card-item"><strong>Company:</strong> ${user.company || 'N/A'}</div>
-                    <div class="card-item"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
-                    <div class="card-item"><strong>Color:</strong> ${user.color || 'N/A'}</div>
-                    <div class="card-item"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
-                    <div class="card-item"><strong>Music:</strong> ${user.music || 'N/A'}</div>
-                    <div class="card-item"><strong>Address:</strong> ${user.address || 'N/A'}</div>
-                    <div class="card-item"><strong>City:</strong> ${user.city || 'N/A'}</div>
-                    <div class="card-item"><strong>State:</strong> ${user.state || 'N/A'}</div>
-                    <div class="card-item"><strong>Street:</strong> ${user.street || 'N/A'}</div>
-                    <div class="card-item"><strong>Building:</strong> ${user.building || 'N/A'}</div>
-                    <div class="card-item"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
-                    <div class="card-item"><strong>Email:</strong> ${user.email || 'N/A'}</div>
-                    <div class="card-item"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
-                    <div class="card-item"><strong>Password:</strong> ${user.password || 'N/A'}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            cardViewElement.appendChild(card);
-            attachCardEvents(card, user);
+    dataList.forEach((user, index) => {
+        if (index < existingRows.length) {
+            updateSingleRow(existingRows[index], user);
+            existingRows[index].style.display = ''; 
+        }
+        if (index < existingCards.length) {
+            updateSingleCard(existingCards[index], user);
+            existingCards[index].style.display = '';
         }
     });
+
+    for (let i = dataList.length; i < itemsPerPage; i++) {
+        if (existingRows[i]) existingRows[i].style.display = 'none';
+        if (existingCards[i]) existingCards[i].style.display = 'none';
+    }
 }
 
-function attachRowEvents(tableRow, user) {
-    const editIcon = tableRow.querySelector(".edit-icon");
-    const deleteIcon = tableRow.querySelector(".delete-icon");
+function updateSingleRow(tableRow, user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
 
-    editIcon.addEventListener("click", () => openEditModal(user));
-    deleteIcon.addEventListener("click", async () => await deleteRecord(user));
+    tableRow.setAttribute("data-id", user.id);
+    tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+
+    const cells = [
+        user.id,
+        `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
+        user.name, user.company,
+        `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
+        user.email, user.phone, user.dob, user.color, user.timezone, user.music,
+        user.city, user.state, user.address, user.street, user.building,
+        user.zip || user.zipcode, user.createdAt, user.password
+    ];
+
+    const tds = tableRow.querySelectorAll("td");
+    
+    const editIcon = tds[0].querySelector(".edit-icon");
+    const deleteIcon = tds[0].querySelector(".delete-icon");
+    const newEditIcon = editIcon.cloneNode(true);
+    const newDeleteIcon = deleteIcon.cloneNode(true);
+    editIcon.replaceWith(newEditIcon);
+    deleteIcon.replaceWith(newDeleteIcon);
+    newEditIcon.addEventListener("click", () => openEditModal(user));
+    newDeleteIcon.addEventListener("click", async () => await deleteRecord(user));
+
+    cells.forEach((content, i) => {
+        if (tds[i + 1]) {
+            tds[i + 1].innerHTML = content || "N/A";
+        }
+    });
+    
+    tableRow.removeEventListener("click", tableRow._editListener);
+    tableRow._editListener = () => openEditModal(user);
+}
+
+function updateSingleCard(cardElement, user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+
+    cardElement.setAttribute("data-id", user.id);
+    cardElement.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+
+    cardElement.innerHTML = `
+        <div class="card-header">
+            <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
+            <div class="card-info">
+                <div class="card-name">${user.name || 'N/A'}</div>
+                <div class="card-company">${user.company || 'N/A'}</div>
+            </div>
+            <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
+        </div>
+        <div class="card-body">
+            <div class="card-item"><strong>ID:</strong> ${user.id || 'N/A'}</div>
+            <div class="card-item"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
+            <div class="card-item"><strong>Name:</strong> ${user.name || 'N/A'}</div>
+            <div class="card-item"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
+            <div class="card-item"><strong>Company:</strong> ${user.company || 'N/A'}</div>
+            <div class="card-item"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
+            <div class="card-item"><strong>Color:</strong> ${user.color || 'N/A'}</div>
+            <div class="card-item"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
+            <div class="card-item"><strong>Music:</strong> ${user.music || 'N/A'}</div>
+            <div class="card-item"><strong>Address:</strong> ${user.address || 'N/A'}</div>
+            <div class="card-item"><strong>City:</strong> ${user.city || 'N/A'}</div>
+            <div class="card-item"><strong>State:</strong> ${user.state || 'N/A'}</div>
+            <div class="card-item"><strong>Street:</strong> ${user.street || 'N/A'}</div>
+            <div class="card-item"><strong>Building:</strong> ${user.building || 'N/A'}</div>
+            <div class="card-item"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
+            <div class="card-item"><strong>Email:</strong> ${user.email || 'N/A'}</div>
+            <div class="card-item"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
+            <div class="card-item"><strong>Password:</strong> ${user.password || 'N/A'}</div>
+        </div>
+        <div class="card-actions">
+            <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    `;
+    
+    attachCardEvents(cardElement, user);
 }
 
 function attachCardEvents(cardElement, user) {
@@ -369,10 +376,7 @@ async function deleteRecord(user) {
         const res = await fetch(`${API_URL}/${user.id}`, { method: "DELETE" });
         if (res.ok) {
             allLoadedData = allLoadedData.filter(u => u.id != user.id);
-            const row = tableBodyElement.querySelector(`tr[data-id='${user.id}']`);
-            if (row) row.remove();
-            const card = cardViewElement.querySelector(`.card[data-id='${user.id}']`);
-            if (card) card.remove();
+            renderView(allLoadedData);
         } else alert("Xóa thất bại!");
     } catch (err) {
         console.error(err);
@@ -401,7 +405,6 @@ function formatDobForInput(dobString) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-
 function openEditModal(user) {
     isEditMode  = true;
     editingUser = user;
@@ -412,13 +415,7 @@ function openEditModal(user) {
     addRecordForm.genre.value    = user.genre || "";
     addRecordForm.email.value    = user.email || "";
     addRecordForm.phone.value    = user.phone || "";
-    
-    // xử lý dob đúng định dạng input datetime-local
-    if (user.dob) {
-        const d = new Date(user.dob);
-        addRecordForm.dob.value = formatDobForInput(user.dob);
-    } else addRecordForm.dob.value = "";
-
+    addRecordForm.dob.value      = formatDobForInput(user.dob);
     addRecordForm.color.value    = user.color || "#ffffff";
     addRecordForm.timezone.value = user.timezone || "";
     addRecordForm.music.value    = user.music || "";
@@ -427,9 +424,7 @@ function openEditModal(user) {
     addRecordForm.address.value  = user.address || "";
     addRecordForm.street.value   = user.street || "";
     addRecordForm.building.value = user.building || "";
-
     addRecordForm.zip.value      = user.zip || user.zipcode || "";
-
     addRecordForm.password.value = user.password || "";
 
     avatarPreview.innerHTML = user.avatar
@@ -440,20 +435,21 @@ function openEditModal(user) {
     submitBtn.textContent = "Chỉnh sửa";
 }
 
-scrollContainer.addEventListener("scroll", () => {
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-    if (scrollTop + clientHeight >= scrollHeight - 1) {
-        if (moreDataAvailable) {
-            loadMoreElement.style.display = "block";
-            loadMoreElement.querySelector('div:last-child').textContent = `...`;
-            loadMoreData();
-        } else {
-            loadMoreElement.style.display = "none";
-        }
-    }
-});
+function initApp() {
+    console.log("App initializing...");
+    console.log("Table body:", tableBodyElement);
+    console.log("Loader:", loaderElement);
+    
+    initializeFixedRows();
+    
+    switchViewMode();
+    loadInitialData();
+}
 
-window.addEventListener('resize', switchViewMode);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
-switchViewMode();
-loadMoreData();
+window.addEventListener("resize", switchViewMode);

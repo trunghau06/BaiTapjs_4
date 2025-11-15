@@ -67,18 +67,42 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
+
+    // Validation
+    const name = formData.get("name");
+    const phone = formData.get("phone");
+    const email = formData.get("email");
+    const password = formData.get("password");
+
+    // Validate tên tối thiểu 20 ký tự
+    if (name.length < 20) {
+        alert("Tên phải có tối thiểu 20 ký tự!");
+        return;
+    }
+
+    // Validate phone chỉ chứa số
+    const phoneRegex = /^[0-9]+$/;
+    if (!phoneRegex.test(phone)) {
+        alert("Số điện thoại chỉ được chứa số!");
+        return;
+    }
+
+    // Validate email
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        alert("Email không đúng định dạng (vd: abc@gmail.com)!");
+        return;
+    }
+
+    // Validate password: phải có chữ hoa, chữ thường, số và ký tự đặc biệt
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+        alert("Password phải chứa ít nhất 8 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt!");
+        return;
+    }
 
     let avatarUrl = editingUser?.avatar || ""; 
     const avatarFile = formData.get("avatarFile");

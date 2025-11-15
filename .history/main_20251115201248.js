@@ -67,15 +67,6 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
@@ -457,3 +448,31 @@ window.addEventListener('resize', switchViewMode);
 
 switchViewMode();
 loadMoreData();
+
+
+// Component A (Lắng nghe sự kiện)
+document.addEventListener('dataChanged', (e) => {
+    console.log('Component A: Nhận được dữ liệu mới.');
+    // Truy cập dữ liệu được truyền qua detail
+    console.log('Dữ liệu:', e.detail.payload); 
+    // Logic: Cập nhật biểu đồ
+});
+
+// Component B (Phát sự kiện) - Thường là nơi xử lý API
+function onDataFetchSuccess(data) {
+    // Tạo Custom Event
+    const dataUpdateEvent = new CustomEvent('dataChanged', {
+        detail: { 
+            payload: data, 
+            status: 'success' 
+        },
+        bubbles: true // Cho phép sự kiện nổi lên document
+    });
+    
+    // Phát sự kiện trên phần tử document (có thể là window hoặc div cha)
+    document.dispatchEvent(dataUpdateEvent); 
+}
+
+// Giả lập sau khi API call thành công
+onDataFetchSuccess({ users: 50, revenue: 1200 });
+// => Component A sẽ tự động chạy logic cập nhật.

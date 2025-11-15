@@ -67,15 +67,6 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
@@ -266,7 +257,6 @@ function appendNewItems(dataList) {
         const genderLabel = isMale ? 'Nam' : 'Nữ';
         const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
 
-        // TABLE ROW
         const tableRow = document.createElement("tr");
         tableRow.setAttribute("data-id", user.id);
         tableRow.className = "data-row";
@@ -299,14 +289,12 @@ function appendNewItems(dataList) {
 
         attachRowEvents(tableRow, user);
 
-        // CARD VIEW
         if (!cardViewElement.querySelector(`.card[data-id='${user.id}']`)) {
             const card = document.createElement("div");
             card.className = "card";
             card.setAttribute("data-id", user.id);
             card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
             
-
             card.innerHTML = `
                 <div class="card-header">
                     <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
@@ -413,7 +401,6 @@ function openEditModal(user) {
     addRecordForm.email.value    = user.email || "";
     addRecordForm.phone.value    = user.phone || "";
     
-    // xử lý dob đúng định dạng input datetime-local
     if (user.dob) {
         const d = new Date(user.dob);
         addRecordForm.dob.value = formatDobForInput(user.dob);

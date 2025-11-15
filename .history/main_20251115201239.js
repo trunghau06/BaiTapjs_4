@@ -67,15 +67,6 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
@@ -457,3 +448,14 @@ window.addEventListener('resize', switchViewMode);
 
 switchViewMode();
 loadMoreData();
+
+
+Nguyên lý
+Custom Events cho phép bạn tạo ra các sự kiện riêng, giúp các thành phần trong ứng dụng giao tiếp với nhau theo mô hình Publish/Subscribe (Phát/Đăng ký). Điều này tạo ra kiến trúc ứng dụng tách rời (decoupled), nơi một thành phần có thể phát ra sự kiện mà không cần biết chính xác thành phần nào sẽ lắng nghe nó.
+
+Các bước cơ bản
+Tạo: new CustomEvent(name, { detail: data }). Đối tượng detail là nơi chứa dữ liệu tùy chỉnh.
+
+Phát: element.dispatchEvent(event).
+
+Lắng nghe: element.addEventListener(name, handler).

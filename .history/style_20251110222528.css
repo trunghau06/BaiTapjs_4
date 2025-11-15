@@ -185,10 +185,6 @@ body {
     background-color: #f0f0f5;
 }
 
-.data-table tbody tr {
-    height: 50px; 
-}
-
 .data-table th:nth-child(1),
 .data-table td:nth-child(1) { width: 100px; }   
 
@@ -738,11 +734,13 @@ body {
     }
 
     .add-record-btn {
-        top: 64%;
-        right: 20px;
+        bottom: 30px;   /* đặt cách đáy */
+        top: auto;     
+        right: 20px;   
         width: 50px;
         height: 50px;
         border-radius: 50%;
+        z-index: 9999; 
     }
 
     .pagination-next-btn, .pagination-prev-btn {

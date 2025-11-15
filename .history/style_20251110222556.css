@@ -185,10 +185,6 @@ body {
     background-color: #f0f0f5;
 }
 
-.data-table tbody tr {
-    height: 50px; 
-}
-
 .data-table th:nth-child(1),
 .data-table td:nth-child(1) { width: 100px; }   
 

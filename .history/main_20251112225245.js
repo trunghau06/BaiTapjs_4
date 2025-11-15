@@ -1,11 +1,11 @@
-const API_URL          = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
-let currentPage        = 1;
-const itemsPerPage     = 15; 
-let allLoadedData      = [];
-let loading            = false;
-let moreDataAvailable  = true;
-let isEditMode         = false;
-let editingUser        = null;
+const API_URL           = "https://671891927fc4c5ff8f49fcac.mockapi.io/v2";
+let currentPage         = 1;
+const itemsPerPage      = 15; 
+let allLoadedData       = []; 
+let loading             = false;
+let moreDataAvailable   = true;
+let isEditMode          = false;
+let editingUser         = null;
 
 const tableBodyElement = document.getElementById("tableBody");
 const cardViewElement  = document.getElementById("cardView");
@@ -67,15 +67,6 @@ avatarFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Thêm validation pattern cho các input
-document.getElementById("name").setAttribute("minlength", "20");
-document.getElementById("phone").setAttribute("pattern", "[0-9]+");
-document.getElementById("phone").setAttribute("title", "Chỉ được nhập số");
-document.getElementById("email").setAttribute("pattern", "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-document.getElementById("email").setAttribute("title", "Email không đúng định dạng (vd: abc@gmail.com)");
-document.getElementById("password").setAttribute("pattern", "(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}");
-document.getElementById("password").setAttribute("title", "Password phải chứa ít nhất 8 ký tự: chữ HOA, chữ thường, số và ký tự đặc biệt");
-
 addRecordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(addRecordForm);
@@ -133,8 +124,11 @@ async function addNewRecordAtStart(record) {
             body   : JSON.stringify(record)
         });
         const addedData = await response.json();
+        
         allLoadedData.unshift(addedData);
-        renderTable(allLoadedData);
+        
+        prependNewItem(addedData); 
+        
     } catch (error) {
         console.error("Lỗi khi thêm record:", error);
         alert("Lỗi khi thêm record!");
@@ -180,10 +174,11 @@ async function editRecordById(id, updates) {
         });
         if (!response.ok) throw new Error(`Lỗi khi sửa record id ${id}: ${response.status}`);
         const updatedData = await response.json();
+        
         const index = allLoadedData.findIndex(item => item.id == id);
         if (index !== -1) {
             allLoadedData[index] = updatedData;
-            renderTable(allLoadedData);
+            updateDOMElement(id, updatedData);
         }
     } catch (error) {
         console.error(error);
@@ -217,7 +212,7 @@ async function loadMoreData() {
         if (dataList.length === 0) moreDataAvailable = false;
         else {
             allLoadedData = [...allLoadedData, ...dataList];
-            appendNewItems(dataList);
+            appendNewItemsToDOM(dataList);
             currentPage++;
             if (currentPage === 2) {
                 scrollContainer.style.display = "block";
@@ -253,98 +248,131 @@ function lightenColor(hexColor, percent) {
     return `rgb(${r},${g},${b})`;
 }
 
+function prependNewItem(user) {
+    const tableRow = createTableRow(user);
+    tableBodyElement.prepend(tableRow);
+    
+    const card = createCardElement(user);
+    cardViewElement.prepend(card);
+}
+
+function updateDOMElement(id, user) {
+    const row = tableBodyElement.querySelector(`tr[data-id='${id}']`);
+    if (row) {
+        const newRow = createTableRow(user);
+        row.replaceWith(newRow); 
+    }
+
+    const card = cardViewElement.querySelector(`.card[data-id='${id}']`);
+    if (card) {
+        const newCard = createCardElement(user);
+        card.replaceWith(newCard);
+    }
+}
+
 function renderTable(data) {
     tableBodyElement.innerHTML = "";
     cardViewElement.innerHTML = "";
-    appendNewItems(data);
+    appendNewItemsToDOM(data);
 }
 
-function appendNewItems(dataList) {
+function appendNewItemsToDOM(dataList) {
     dataList.forEach(user => {
-        const isMale = user.genre?.toLowerCase() === 'male';
-        const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
-        const genderLabel = isMale ? 'Nam' : 'Nữ';
-        const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+        const tableRow = createTableRow(user);
+        tableBodyElement.appendChild(tableRow);
+        
+        const card = createCardElement(user);
+        cardViewElement.appendChild(card);
+    });
+}
 
-        // TABLE ROW
-        const tableRow = document.createElement("tr");
-        tableRow.setAttribute("data-id", user.id);
-        tableRow.className = "data-row";
-        tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+function createTableRow(user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
 
-        const cells = [
-            user.id,
-            `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
-            user.name, user.company,
-            `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
-            user.email, user.phone, user.dob, user.color, user.timezone, user.music,
-            user.city, user.state, user.address, user.street, user.building,
-            user.zip || user.zipcode, user.createdAt, user.password
-        ];
+    const tableRow = document.createElement("tr");
+    tableRow.setAttribute("data-id", user.id);
+    tableRow.className = "data-row";
+    tableRow.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
 
-        cells.forEach(content => {
-            const td = document.createElement("td");
-            td.innerHTML = content || "N/A";
-            tableRow.appendChild(td);
-        });
+    const cellsContent = [
+        user.id,
+        `<img src="${user.avatar || 'https://via.placeholder.com/40'}" alt="${user.name}" class="avatar-small">`,
+        user.name, user.company,
+        `<span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>`,
+        user.email, user.phone, user.dob, user.color, user.timezone, user.music,
+        user.city, user.state, user.address, user.street, user.building,
+        user.zip || user.zipcode, user.createdAt, user.password
+    ];
 
-        const actionTd = document.createElement("td");
-        actionTd.style.textAlign = "center";
-        actionTd.innerHTML = `
+    const actionTd = document.createElement("td");
+    actionTd.style.textAlign = "center";
+    actionTd.innerHTML = `
+        <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+    `;
+    
+    tableRow.appendChild(actionTd); 
+    
+    cellsContent.forEach(content => {
+        const td = document.createElement("td");
+        td.innerHTML = content || "N/A";
+        tableRow.appendChild(td);
+    });
+    
+    attachRowEvents(tableRow, user);
+    return tableRow;
+}
+
+function createCardElement(user) {
+    const isMale = user.genre?.toLowerCase() === 'male';
+    const genderBadgeClass = isMale ? 'badge-male' : 'badge-female';
+    const genderLabel = isMale ? 'Nam' : 'Nữ';
+    const genderIconClass = isMale ? 'fa-mars' : 'fa-venus';
+    
+    const card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("data-id", user.id);
+    card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
+
+    card.innerHTML = `
+        <div class="card-header">
+            <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
+            <div class="card-info">
+                <div class="card-name">${user.name || 'N/A'}</div>
+                <div class="card-company">${user.company || 'N/A'}</div>
+            </div>
+            <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
+        </div>
+        <div class="card-body">
+            <div class="card-item"><strong>ID:</strong> ${user.id || 'N/A'}</div>
+            <div class="card-item"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
+            <div class="card-item"><strong>Name:</strong> ${user.name || 'N/A'}</div>
+            <div class="card-item"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
+            <div class="card-item"><strong>Company:</strong> ${user.company || 'N/A'}</div>
+            <div class="card-item"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
+            <div class="card-item"><strong>Color:</strong> ${user.color || 'N/A'}</div>
+            <div class="card-item"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
+            <div class="card-item"><strong>Music:</strong> ${user.music || 'N/A'}</div>
+            <div class="card-item"><strong>Address:</strong> ${user.address || 'N/A'}</div>
+            <div class="card-item"><strong>City:</strong> ${user.city || 'N/A'}</div>
+            <div class="card-item"><strong>State:</strong> ${user.state || 'N/A'}</div>
+            <div class="card-item"><strong>Street:</strong> ${user.street || 'N/A'}</div>
+            <div class="card-item"><strong>Building:</strong> ${user.building || 'N/A'}</div>
+            <div class="card-item"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
+            <div class="card-item"><strong>Email:</strong> ${user.email || 'N/A'}</div>
+            <div class="card-item"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
+            <div class="card-item"><strong>Password:</strong> ${user.password || 'N/A'}</div>
+        </div>
+        <div class="card-actions">
             <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-        `;
-        tableRow.prepend(actionTd);
-        tableBodyElement.appendChild(tableRow);
-
-        attachRowEvents(tableRow, user);
-
-        // CARD VIEW
-        if (!cardViewElement.querySelector(`.card[data-id='${user.id}']`)) {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.setAttribute("data-id", user.id);
-            card.style.backgroundColor = lightenColor(user.color || "#FFFFFF", 70);
-            
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <img src="${user.avatar || 'https://via.placeholder.com/60'}" alt="${user.name}" class="avatar">
-                    <div class="card-info">
-                        <div class="card-name">${user.name || 'N/A'}</div>
-                        <div class="card-company">${user.company || 'N/A'}</div>
-                    </div>
-                    <span class="card-badge ${genderBadgeClass}"><i class="fa-solid ${genderIconClass}"></i> ${genderLabel}</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-item"><strong>ID:</strong> ${user.id || 'N/A'}</div>
-                    <div class="card-item"><strong>Created At:</strong> ${user.createdAt || 'N/A'}</div>
-                    <div class="card-item"><strong>Name:</strong> ${user.name || 'N/A'}</div>
-                    <div class="card-item"><strong>Genre:</strong> ${user.genre || 'N/A'}</div>
-                    <div class="card-item"><strong>Company:</strong> ${user.company || 'N/A'}</div>
-                    <div class="card-item"><strong>DOB:</strong> ${user.dob || 'N/A'}</div>
-                    <div class="card-item"><strong>Color:</strong> ${user.color || 'N/A'}</div>
-                    <div class="card-item"><strong>Timezone:</strong> ${user.timezone || 'N/A'}</div>
-                    <div class="card-item"><strong>Music:</strong> ${user.music || 'N/A'}</div>
-                    <div class="card-item"><strong>Address:</strong> ${user.address || 'N/A'}</div>
-                    <div class="card-item"><strong>City:</strong> ${user.city || 'N/A'}</div>
-                    <div class="card-item"><strong>State:</strong> ${user.state || 'N/A'}</div>
-                    <div class="card-item"><strong>Street:</strong> ${user.street || 'N/A'}</div>
-                    <div class="card-item"><strong>Building:</strong> ${user.building || 'N/A'}</div>
-                    <div class="card-item"><strong>ZIP:</strong> ${user.zip || user.zipcode || 'N/A'}</div>
-                    <div class="card-item"><strong>Email:</strong> ${user.email || 'N/A'}</div>
-                    <div class="card-item"><strong>Phone:</strong> ${user.phone || 'N/A'}</div>
-                    <div class="card-item"><strong>Password:</strong> ${user.password || 'N/A'}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-action edit-icon" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action delete-icon" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            cardViewElement.appendChild(card);
-            attachCardEvents(card, user);
-        }
-    });
+        </div>
+    `;
+    attachCardEvents(card, user);
+    return card;
 }
 
 function attachRowEvents(tableRow, user) {
@@ -413,7 +441,6 @@ function openEditModal(user) {
     addRecordForm.email.value    = user.email || "";
     addRecordForm.phone.value    = user.phone || "";
     
-    // xử lý dob đúng định dạng input datetime-local
     if (user.dob) {
         const d = new Date(user.dob);
         addRecordForm.dob.value = formatDobForInput(user.dob);

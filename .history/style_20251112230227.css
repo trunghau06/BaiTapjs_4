@@ -22,7 +22,7 @@ body {
     padding: 0;
     display: flex;
     flex-direction: column;
-    overflow-y: scroll;
+    overflow-y: hidden; /* SỬA LỖI 1: Tắt cuộn trên body, để cards-container cuộn */
 }
 
 .container {
@@ -103,7 +103,7 @@ body {
 .cards-container {
     position: relative; 
     height: 68vh; 
-    overflow-y: auto; 
+    overflow-y: auto; /* QUAN TRỌNG: Tạo thanh cuộn */
     overflow-x: auto;
     backdrop-filter: blur(5px); 
     display: none; 
@@ -137,6 +137,7 @@ body {
 
 #cardView {
     display: none;
+    position: relative; 
 }
 
 #tableView {
@@ -177,7 +178,22 @@ body {
     z-index: 10;
 }
 
+.data-table tbody {
+    /* SỬA LỖI 2: Quan trọng cho Virtualization trên table */
+    position: relative; 
+    display: block;
+    width: 100%;
+}
+
 .data-row {
+    /* SỬA LỖI 3: Cốt lõi cho Virtualization trên TR */
+    position: absolute; 
+    width: 100%;
+    height: 50px; /* PHẢI CỐ ĐỊNH: ROW_HEIGHT = 50px */
+    display: table; /* Giữ thuộc tính table row */
+    table-layout: fixed; 
+    top: 0;
+    left: 0;
     transition: background-color 0.2s ease;
 }
 
@@ -186,17 +202,18 @@ body {
 }
 
 .data-table tbody tr {
-    height: 50px; 
+    /* Ghi đè: Không cần height cố định ở đây nữa */
+    height: auto; 
 }
 
 .data-table th:nth-child(1),
-.data-table td:nth-child(1) { width: 100px; }   
+.data-table td:nth-child(1) { width: 100px; }  
 
 .data-table th:nth-child(2),
-.data-table td:nth-child(2) { width: 60px; }   /* ID */
+.data-table td:nth-child(2) { width: 60px; }  /* ID */
 
 .data-table th:nth-child(3),
-.data-table td:nth-child(3) { width: 80px; }   /* Avatar */
+.data-table td:nth-child(3) { width: 80px; }  /* Avatar */
 
 .data-table th:nth-child(4),
 .data-table td:nth-child(4) { width: 240px; }  /* Name */
@@ -205,7 +222,7 @@ body {
 .data-table td:nth-child(5) { width: 260px; }  /* Company */
 
 .data-table th:nth-child(6),
-.data-table td:nth-child(6) { width: 100px; }   /* Genre */
+.data-table td:nth-child(6) { width: 100px; }  /* Genre */
 
 .data-table th:nth-child(7),
 .data-table td:nth-child(7) { width: 300px; }  /* Email */
@@ -302,12 +319,17 @@ body {
 }
 
 .card {
+    position: absolute; /* SỬA LỖI 4: Quan trọng cho Card Virtualization */
+    width: 100%;
+    height: 50px; /* PHẢI CỐ ĐỊNH: ROW_HEIGHT = 50px */
+    top: 0;
+    left: 0;
+
     background: var(--card-bg);
     border-radius: 12px;
     padding: 18px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s ease;
-    width: 100%;
 }
 
 .card:hover {
@@ -382,8 +404,8 @@ body {
 }
 
 .card-item strong {
-    display: inline-block;   
-    width: 90px;     
+    display: inline-block;  
+    width: 90px;    
     font-weight: 700;
     color: var(--text-primary);
 }
@@ -397,10 +419,10 @@ body {
 }
 
 .avatar-preview {
-    width: 80px;          
+    width: 80px;            
     height: 80px;
     border-radius: 50%;
-    overflow: hidden;    
+    overflow: hidden;       
     display: flex;
     justify-content: center;
     align-items: center;
@@ -630,126 +652,126 @@ body {
 
 @media (max-width: 768px) {
      #loadingMore {
-        display: none !important;
-    }
+         display: none !important;
+     }
 
-    #tableView {
-        display: none !important;
-    }
+     #tableView {
+         display: none !important;
+     }
 
-    #cardView {
-        display: flex !important;
-    }
+     #cardView {
+         display: flex !important;
+     }
 
-    body {
-        min-width: auto;
-        overflow-x: hidden;
-    }
+     body {
+         min-width: auto;
+         overflow-x: hidden;
+     }
 
-    .container {
-        position: relative; 
-        left: auto;
-        transform: none;
-        margin: 0 auto;
-        width: 100%;
-        padding: 10px;
-    }
+     .container {
+         position: relative; 
+         left: auto;
+         transform: none;
+         margin: 0 auto;
+         width: 100%;
+         padding: 10px;
+     }
 
-    .cards-container {
-        height: 90vh;
-        width: 100%;
-        max-width: 100%;    
-        margin: 0 auto;      
-        padding: 0;    
-        display: flex;   
-        flex-direction: column;
-        align-items: center; 
-        overflow-x: hidden !important;
-    }
+     .cards-container {
+         height: 90vh;
+         width: 100%;
+         max-width: 100%;      
+         margin: 0 auto;       
+         padding: 0;      
+         display: flex;   
+         flex-direction: column;
+         align-items: center; 
+         overflow-x: hidden !important;
+     }
 
-    .card-list-grid {
-        width: 100%;
-        max-width: 500px;  
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
+     .card-list-grid {
+         width: 100%;
+         max-width: 500px;  
+         margin: 0 auto;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+     }
 
-    .cards-content {
-        padding: 0 10px;
-        display: flex;
-        justify-content: center;
-        left: 0 !important;
-        right: 0 !important;
-        min-width: auto !important;
-        width: 100% !important;
-    }
+     .cards-content {
+         padding: 0 10px;
+         display: flex;
+         justify-content: center;
+         left: 0 !important;
+         right: 0 !important;
+         min-width: auto !important;
+         width: 100% !important;
+     }
 
-    .header h1 {
-        font-size: 2rem;
-    }
+     .header h1 {
+         font-size: 2rem;
+     }
 
-    .header p {
-        font-size: 1rem;
-    }
+     .header p {
+         font-size: 1rem;
+     }
 
-    .card-body {
-        grid-template-columns: 1fr;
-    }
+     .card-body {
+         grid-template-columns: 1fr;
+     }
 
-    .card {
-        padding: 12px;
-        width: 88%;
-    }
+     .card {
+         padding: 12px;
+         width: 88%;
+     }
 
-    .card-header {
-        flex-wrap: nowrap;
-        padding: 24px 8px;
-        margin-bottom: 8px;
-    }
+     .card-header {
+         flex-wrap: nowrap;
+         padding: 24px 8px;
+         margin-bottom: 8px;
+     }
 
-    .card-badge {
-        order: auto;
-        margin-top: 0;
-        align-self: center;
-    }
+     .card-badge {
+         order: auto;
+         margin-top: 0;
+         align-self: center;
+     }
 
-    .card-info {
-        flex-basis: auto;
-        min-width: 80px;
-    }
+     .card-info {
+         flex-basis: auto;
+         min-width: 80px;
+     }
 
-     .modal-content {
-        width: 90%;         
-        max-width: 500px;  
-        max-height: 90vh;
-        margin: 0 auto;     
-        padding: 20px;       
-        border-radius: 12px;
-    }
-    
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .modal-header h2 {
-        font-size: 20px;
-    }
+       .modal-content {
+         width: 90%;          
+         max-width: 500px;  
+         max-height: 90vh;
+         margin: 0 auto;       
+         padding: 20px;        
+         border-radius: 12px;
+     }
+     
+     .form-grid {
+         grid-template-columns: 1fr;
+     }
+     
+     .modal-header h2 {
+         font-size: 20px;
+     }
 
-    .add-record-btn {
-        top: 64%;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-    }
+     .add-record-btn {
+         top: 64%;
+         right: 20px;
+         width: 50px;
+         height: 50px;
+         border-radius: 50%;
+     }
 
-    .pagination-next-btn, .pagination-prev-btn {
-        display: none;
-    }
+     .pagination-next-btn, .pagination-prev-btn {
+         display: none;
+     }
 
-    .btn-action {
-        justify-content: flex-end;
-    }
+     .btn-action {
+         justify-content: flex-end;
+     }
 }
